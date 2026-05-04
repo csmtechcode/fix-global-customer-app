@@ -1,24 +1,46 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+// import { Stack } from "expo-router";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+// export default function RootLayout() {
+//   return <Stack />;
+// }
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import { View, Text } from "react-native";
+
+function SplashScreen() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#0B1F3A",
+      }}
+    >
+      <Text style={{ color: "#D4AF37", fontSize: 65, fontWeight: "bold" }}>
+        Fix Global
+      </Text>
+    </View>
+  );
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setIsReady(true), 1500); // 1.5s splash
+  }, []);
+
+  if (!isReady) return <SplashScreen />;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(modals)" options={{ presentation: "modal" }} />
+    </Stack>
   );
 }
