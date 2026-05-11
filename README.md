@@ -48,3 +48,18 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+Windows PowerShell
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+
+PS C:\Windows\system32> Get-CimInstance -Namespace root/wmi -ClassName MSAcpi*ThermalZoneTemperature | Select-Object CurrentTemperature | ForEach-Object { ($*.CurrentTemperature / 10) - 273.15 }
+60.05
+25.05
+50.05
+48.05
+36.05
+46.05
+0.0500000000000114
+PS C:\Windows\system32>

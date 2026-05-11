@@ -17,7 +17,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../../src/components/layout/TopBar";
-import Navbar from "@/src/components/layout/Navbar";
+import Navbar from "../../src/components/layout/Navbar";
 
 const { width } = Dimensions.get("window");
 
