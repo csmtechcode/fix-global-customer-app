@@ -145,8 +145,8 @@ export default function PaymentMethodsScreen() {
         location="Lagos, NG"
         notificationCount={2}
         initials="JD"
-        onNotificationPress={() => console.log("Notifications")}
-        onLocationPress={() => console.log("Change location")}
+        onNotificationPress={() => router.push("/profile/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
 

@@ -2,7 +2,7 @@
 // FixGlobal — Home Screen
 // Sections: TopBar, Hero, Search, Categories, Featured Pros, Active Booking, Recent
 
-import React, { useRef } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Pressable,
   StyleSheet,
   Dimensions,
-  Image,
   FlatList,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -25,7 +24,6 @@ const { width } = Dimensions.get("window");
 const BLUE = "#1A3C6E";
 const GOLD = "#FFC300";
 const WHITE = "#FFFFFF";
-const LIGHT = "#F4F7FD";
 const GREY = "#64748B";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -347,8 +345,8 @@ export default function HomeScreen() {
         location="Lagos, NG"
         notificationCount={3}
         initials="JD"
-        onNotificationPress={() => console.log("Notifications")}
-        onLocationPress={() => console.log("Change location")}
+        onNotificationPress={() => router.push("/profile/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
 

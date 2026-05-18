@@ -17,9 +17,7 @@ import Navbar from "@/src/components/layout/Navbar";
 import TopBar from "../../src/components/layout/TopBar";
 
 const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
 const WHITE = "#FFFFFF";
-const LIGHT = "#F4F7FD";
 const GREY = "#64748B";
 
 export default function ProfileScreen() {
@@ -48,8 +46,8 @@ export default function ProfileScreen() {
         location="Ibadan, NG"
         notificationCount={1}
         initials="OA"
-        onNotificationPress={() => console.log("Notifications")}
-        onLocationPress={() => console.log("Change location")}
+        onNotificationPress={() => router.push("/profile/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")} // already on profile
       />
 
@@ -156,7 +154,7 @@ export default function ProfileScreen() {
           <MenuItem
             icon="notifications-outline"
             title="Notifications"
-            onPress={() => router.push("/(tabs)/notifications")}
+            onPress={() => router.push("/profile/notifications")}
             showArrow
           />
         </View>

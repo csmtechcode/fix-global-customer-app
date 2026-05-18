@@ -37,17 +37,11 @@ export default function TopBar({
           <Text style={styles.logoGold}>Global</Text>
         </View>
 
-        {/* ── Center: Location pill ──────────────────────────────── */}
-        <Pressable style={styles.locationPill} onPress={onLocationPress}>
-          <Ionicons name="location-sharp" size={13} color={GOLD} />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {location}
-          </Text>
-          <Ionicons name="chevron-down" size={12} color={BLUE} />
-        </Pressable>
-
-        {/* ── Right: Bell + Avatar ───────────────────────────────── */}
         <View style={styles.rightRow}>
+          <Pressable style={styles.settingsBtn} onPress={onLocationPress}>
+            <Ionicons name="settings-outline" size={20} color={BLUE} />
+          </Pressable>
+
           {/* Notification bell */}
           <Pressable style={styles.bellBtn} onPress={onNotificationPress}>
             <Ionicons name="notifications-outline" size={22} color={BLUE} />
@@ -118,6 +112,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: BLUE,
     flexShrink: 1,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: LIGHT,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Right actions

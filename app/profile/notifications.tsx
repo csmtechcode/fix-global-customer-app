@@ -9,9 +9,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-import Navbar from "@/src/components/layout/Navbar";
 import TopBar from "../../src/components/layout/TopBar";
 
 const BLUE = "#1A3C6E";
@@ -21,7 +21,7 @@ const LIGHT = "#F4F7FD";
 const GREY = "#64748B";
 const BORDER = "#EAF0FB";
 
-export default function NotificationsScreen() {
+export default function ProfileNotificationsScreen() {
   const router = useRouter();
   const [bookingUpdates, setBookingUpdates] = useState(true);
   const [offers, setOffers] = useState(true);
@@ -32,7 +32,6 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.root} edges={["top"]}>
       <TopBar
-        location="Ibadan, NG"
         notificationCount={3}
         initials="OA"
         onNotificationPress={() => router.push("/profile/notifications")}
@@ -46,7 +45,7 @@ export default function NotificationsScreen() {
       >
         <Text style={styles.heading}>Notifications</Text>
         <Text style={styles.subtitle}>
-          Choose which alerts you want to receive from FixGlobal.
+          Control which alerts you receive from FixGlobal.
         </Text>
 
         <View style={styles.section}>
@@ -89,8 +88,6 @@ export default function NotificationsScreen() {
           <Text style={styles.saveButtonText}>Save Preferences</Text>
         </Pressable>
       </ScrollView>
-
-      <Navbar />
     </SafeAreaView>
   );
 }
