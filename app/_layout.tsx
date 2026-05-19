@@ -7,6 +7,7 @@
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
+import { AppThemeProvider } from "../src/context/ThemeContext";
 
 function SplashScreen() {
   return (
@@ -35,12 +36,14 @@ export default function RootLayout() {
   if (!isReady) return <SplashScreen />;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="onboarding" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(modals)" options={{ presentation: "modal" }} />
-    </Stack>
+    <AppThemeProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(modals)" options={{ presentation: "modal" }} />
+      </Stack>
+    </AppThemeProvider>
   );
 }

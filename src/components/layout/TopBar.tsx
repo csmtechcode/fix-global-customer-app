@@ -4,10 +4,7 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
-const LIGHT = "#F4F7FD";
+import  useTheme  from "../../context/ThemeContext";
 
 interface TopBarProps {
   location?: string;
@@ -26,25 +23,27 @@ export default function TopBar({
   onAvatarPress,
   initials = "JD",
 }: TopBarProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.wrapper}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <View style={[styles.wrapper, { backgroundColor: colors.topBarBg, borderBottomColor: colors.border }]}> 
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.topBarBg} />
 
       <View style={styles.row}>
         {/* ── Left: Logo ─────────────────────────────────────────── */}
         <View style={styles.logoBlock}>
-          <Text style={styles.logoFix}>Fix</Text>
-          <Text style={styles.logoGold}>Global</Text>
+          <Text style={[styles.logoFix, { color: colors.textPrimary }]}>Fix</Text>
+          <Text style={[styles.logoGold, { color: colors.accent }]}>Global</Text>
         </View>
 
         <View style={styles.rightRow}>
-          <Pressable style={styles.settingsBtn} onPress={onLocationPress}>
-            <Ionicons name="settings-outline" size={20} color={BLUE} />
+          <Pressable style={[styles.settingsBtn, { backgroundColor: colors.surface }]} onPress={onLocationPress}>
+            <Ionicons name="settings-outline" size={20} color={colors.icon} />
           </Pressable>
 
           {/* Notification bell */}
-          <Pressable style={styles.bellBtn} onPress={onNotificationPress}>
-            <Ionicons name="notifications-outline" size={22} color={BLUE} />
+          <Pressable style={[styles.bellBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={onNotificationPress}>
+            <Ionicons name="notifications-outline" size={22} color={colors.icon} />
             {notificationCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>
@@ -55,8 +54,8 @@ export default function TopBar({
           </Pressable>
 
           {/* Avatar circle */}
-          <Pressable style={styles.avatar} onPress={onAvatarPress}>
-            <Text style={styles.avatarText}>{initials}</Text>
+          <Pressable style={[styles.avatar, { backgroundColor: colors.icon, borderColor: colors.accent }]} onPress={onAvatarPress}>
+            <Text style={[styles.avatarText, { color: colors.panel }]}>{initials}</Text>
           </Pressable>
         </View>
       </View>
@@ -84,17 +83,17 @@ const styles = StyleSheet.create({
   logoFix: {
     fontSize: 20,
     fontWeight: "900",
-    color: BLUE,
+    color: "#1A3C6E",
     letterSpacing: -0.4,
   },
   logoGold: {
     fontSize: 20,
     fontWeight: "900",
-    color: GOLD,
+    color: "#FFC300",
     letterSpacing: -0.4,
   },
 
-  // Location
+  // Location pill placeholder
   locationPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -110,14 +109,14 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     fontWeight: "700",
-    color: BLUE,
+    color: "#1A3C6E",
     flexShrink: 1,
   },
   settingsBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: LIGHT,
+    backgroundColor: "#F4F7FD",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -154,11 +153,11 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: BLUE,
+    backgroundColor: "#1A3C6E",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: GOLD,
+    borderColor: "#FFC300",
   },
   avatarText: { fontSize: 13, fontWeight: "800", color: "#fff" },
 });

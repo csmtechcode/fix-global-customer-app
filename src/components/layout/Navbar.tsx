@@ -7,10 +7,7 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
-
-const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
-const GREY = "#8FA0B8";
+import  useTheme  from "../../context/ThemeContext";
 
 type TabName = "home" | "search" | "bookings" | "wallet" | "profile";
 
@@ -66,6 +63,7 @@ interface NavbarProps {
 export default function Navbar({ active }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { colors } = useTheme();
 
   const getActive = (name: TabName): boolean => {
     if (active) return active === name;
@@ -73,7 +71,7 @@ export default function Navbar({ active }: NavbarProps) {
   };
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor: colors.navBg, borderTopColor: colors.navBorder }]}> 
       {TABS.map((tab) => {
         const isActive = getActive(tab.name);
         return (
@@ -81,17 +79,17 @@ export default function Navbar({ active }: NavbarProps) {
             key={tab.name}
             style={({ pressed }) => [
               styles.tab,
-              isActive && styles.tabActive,
-              pressed && !isActive && styles.tabPressed,
+              isActive && { backgroundColor: colors.accent },
+              pressed && !isActive && { backgroundColor: colors.surface },
             ]}
             onPress={() => router.push(tab.route as any)}
           >
             <Ionicons
               name={isActive ? tab.iconActive : tab.icon}
               size={20}
-              color={isActive ? "#fff" : GREY}
+              color={isActive ? colors.panel : colors.textSecondary}
             />
-            <Text style={[styles.label, isActive && styles.labelActive]}>
+            <Text style={[styles.label, isActive && { color: colors.panel }]}>
               {tab.label}
             </Text>
           </Pressable>
@@ -105,13 +103,10 @@ const styles = StyleSheet.create({
   // Outer bar — white bg, subtle top shadow
   wrapper: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#EAF0FB",
     paddingHorizontal: 10,
     paddingVertical: 10,
     paddingBottom: 24, // safe area breathing room
-    shadowColor: BLUE,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.07,
     shadowRadius: 12,
@@ -130,24 +125,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
 
-  // Active tab gets blue pill bg
-  tabActive: {
-    backgroundColor: BLUE,
-  },
-
-  // Subtle press feedback on inactive tabs
-  tabPressed: {
-    backgroundColor: "#EEF4FD",
-  },
-
   // Label
   label: {
     fontSize: 10,
     fontWeight: "700",
-    color: GREY,
+    color: "#6B7280",
     letterSpacing: 0.2,
-  },
-  labelActive: {
-    color: "#fff",
   },
 });

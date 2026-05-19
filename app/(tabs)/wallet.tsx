@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "@/src/components/layout/Navbar";
+import useTheme  from "../../src/context/ThemeContext";
 
 const BLUE = "#1A3C6E";
 const GOLD = "#FFC300";
@@ -61,6 +62,7 @@ const TRANSACTIONS: Transaction[] = [
 
 export default function WalletScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [balance] = useState(12450);
   const [refreshing, setRefreshing] = useState(false);
   const [isBalanceVisible, setIsBalanceVisible] = useState(true); // Eye toggle
@@ -77,7 +79,7 @@ export default function WalletScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
       <TopBar
         location="Lagos, NG"
         notificationCount={2}

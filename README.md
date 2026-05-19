@@ -1,65 +1,51 @@
-# Welcome to your Expo app 👋
+# Fix Global Customer App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native customer-facing app built with Expo Router, TypeScript, and a custom global theme and language context.
 
-## Get started
+## Features
 
-1. Install dependencies
+- File-based routing with Expo Router
+- Global light/dark theme support
+- Language selection inside the app
+- Profile, settings, notifications, wallet, search, and bookings screens
+- Reusable `TopBar` and `Navbar` components with theme-aware styling
+- Safe area support via `react-native-safe-area-context`
 
-   ```bash
-   npm install
-   ```
+## Development
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Install dependencies:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Start the Expo development server:
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Open the app in:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Android emulator
+- iOS simulator
+- Expo Go on a physical device
 
-## Join the community
+## App structure
 
-Join our community of developers creating universal apps.
+- `app/` – Expo Router entrypoints and screens
+- `src/components/` – shared UI and layout components
+- `src/context/ThemeContext.tsx` – global theme and language provider
+- `src/hooks/` – reusable custom hooks
+- `src/lib/` – helpers, API wrappers, storage, and validators
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Theme and language
 
-Windows PowerShell
-Copyright (C) Microsoft Corporation. All rights reserved.
+- Dark mode toggle lives in `app/(tabs)/settings.tsx`
+- Language selector is also available on the settings screen
+- `ThemeContext` provides `themeMode`, `language`, `colors`, and helpers
+- Shared layout components use theme colors for consistent styling
 
-Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows
+## Notes
 
-PS C:\Windows\system32> Get-CimInstance -Namespace root/wmi -ClassName MSAcpi*ThermalZoneTemperature | Select-Object CurrentTemperature | ForEach-Object { ($*.CurrentTemperature / 10) - 273.15 }
-60.05
-25.05
-50.05
-48.05
-36.05
-46.05
-0.0500000000000114
-PS C:\Windows\system32>
+This project is intended as a customer app prototype with an emphasis on UI polish, navigation flow, and accessibility for theming.

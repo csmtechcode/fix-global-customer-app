@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
+import useTheme from "../../src/context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -337,9 +338,14 @@ function RecentRow({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
+  // const { colors } = ThemeContext.useTheme();
+  const { colors } = useTheme();
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
+    <SafeAreaView
+      style={[styles.root, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
       {/* Top navigation bar */}
       <TopBar
         location="Lagos, NG"

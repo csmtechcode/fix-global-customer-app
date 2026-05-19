@@ -1,8 +1,5 @@
 // app/(tabs)/bookings.tsx
 // FixGlobal — Bookings Screen
-// Tabs: All | Active | Pending | Completed | Cancelled
-// Filter: by month
-// Cards: service, pro, date, status, action buttons
 
 import React, { useState, useMemo } from "react";
 import {
@@ -11,7 +8,6 @@ import {
   Pressable,
   FlatList,
   StyleSheet,
-  Dimensions,
   ScrollView,
   Modal,
 } from "react-native";
@@ -20,13 +16,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
+import  useTheme  from "../../src/context/ThemeContext";
 
-const { height } = Dimensions.get("window");
-
-// ─── Tokens ──────────────────────────────────────────────────────────────────
+// ─── Static Tokens ────────────────────────────────────────────────────────────
 const BLUE = "#1A3C6E";
 const GOLD = "#FFC300";
 const WHITE = "#FFFFFF";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const GREY = "#64748B";
 const LIGHT = "#F4F7FD";
 
@@ -197,7 +193,7 @@ const TABS = [
 ];
 
 // ─── Summary strip ────────────────────────────────────────────────────────────
-function SummaryStrip() {
+function SummaryStrip({ colors }: { colors: any }) {
   const counts = {
     total: ALL_BOOKINGS.length,
     active: ALL_BOOKINGS.filter((b) => b.status === "active").length,
@@ -213,16 +209,16 @@ function SummaryStrip() {
   ];
 
   return (
-    <View style={styles.strip}>
+    <View style={[styles.strip, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
       {items.map((item, i) => (
         <View
           key={i}
-          style={[styles.stripItem, i < items.length - 1 && styles.stripBorder]}
+          style={[styles.stripItem, i < items.length - 1 && { borderRightWidth: 1, borderRightColor: colors.border }]}
         >
           <Text style={[styles.stripValue, { color: item.color }]}>
             {item.value}
           </Text>
-          <Text style={styles.stripLabel}>{item.label}</Text>
+          <Text style={[styles.stripLabel, { color: colors.subtext }]}>{item.label}</Text>
         </View>
       ))}
     </View>
@@ -235,24 +231,26 @@ function BookingCard({
   onViewDetails,
   onRebook,
   onCancel,
+  colors,
 }: {
   booking: (typeof ALL_BOOKINGS)[0];
   onViewDetails: () => void;
   onRebook: () => void;
   onCancel: () => void;
+  colors: any;
 }) {
   const s = STATUS[booking.status];
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       {/* Header */}
       <View style={styles.cardHeader}>
         <View style={[styles.cardIconBox, { backgroundColor: booking.iconBg }]}>
           <Ionicons name={booking.icon} size={22} color={booking.iconColor} />
         </View>
         <View style={styles.cardHeaderInfo}>
-          <Text style={styles.cardService}>{booking.service}</Text>
-          <Text style={styles.cardDesc} numberOfLines={1}>
+          <Text style={[styles.cardService, { color: colors.text }]}>{booking.service}</Text>
+          <Text style={[styles.cardDesc, { color: colors.subtext }]} numberOfLines={1}>
             {booking.desc}
           </Text>
         </View>
@@ -262,7 +260,7 @@ function BookingCard({
         </View>
       </View>
 
-      <View style={styles.cardDivider} />
+      <View style={[styles.cardDivider, { backgroundColor: colors.border }]} />
 
       {/* Pro + date */}
       <View style={styles.cardMeta}>
@@ -271,32 +269,31 @@ function BookingCard({
             <Text style={styles.proInitials}>{booking.proInitials}</Text>
           </View>
           <View>
-            <Text style={styles.metaLabel}>Professional</Text>
-            <Text style={styles.metaValue}>{booking.pro}</Text>
+            <Text style={[styles.metaLabel, { color: colors.subtext }]}>Professional</Text>
+            <Text style={[styles.metaValue, { color: colors.text }]}>{booking.pro}</Text>
           </View>
         </View>
         <View style={styles.metaItem}>
-          <View style={styles.metaIcon}>
+          <View style={[styles.metaIcon, { backgroundColor: colors.inputBg ?? "#EEF4FD" }]}>
             <Ionicons name="calendar-outline" size={16} color={BLUE} />
           </View>
           <View>
-            <Text style={styles.metaLabel}>Date & Time</Text>
-            <Text style={styles.metaValue}>{booking.dateLabel}</Text>
-            <Text style={styles.metaTime}>{booking.time}</Text>
+            <Text style={[styles.metaLabel, { color: colors.subtext }]}>Date & Time</Text>
+            <Text style={[styles.metaValue, { color: colors.text }]}>{booking.dateLabel}</Text>
+            <Text style={[styles.metaTime, { color: colors.subtext }]}>{booking.time}</Text>
           </View>
         </View>
       </View>
 
       {/* Footer */}
-      <View style={styles.cardFooter}>
+      <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
         <View>
-          <Text style={styles.priceLabel}>Total</Text>
-          <Text style={styles.price}>{booking.price}</Text>
+          <Text style={[styles.priceLabel, { color: colors.subtext }]}>Total</Text>
+          <Text style={[styles.price, { color: colors.text }]}>{booking.price}</Text>
         </View>
         <View style={styles.cardActions}>
-          {(booking.status === "completed" ||
-            booking.status === "cancelled") && (
-            <Pressable style={styles.rebookBtn} onPress={onRebook}>
+          {(booking.status === "completed" || booking.status === "cancelled") && (
+            <Pressable style={[styles.rebookBtn, { borderColor: BLUE, backgroundColor: colors.card }]} onPress={onRebook}>
               <Ionicons name="refresh-outline" size={13} color={BLUE} />
               <Text style={styles.rebookText}>Rebook</Text>
             </Pressable>
@@ -322,11 +319,13 @@ function MonthPicker({
   selected,
   onSelect,
   onClose,
+  colors,
 }: {
   visible: boolean;
   selected: string;
   onSelect: (m: string) => void;
   onClose: () => void;
+  colors: any;
 }) {
   return (
     <Modal
@@ -336,13 +335,17 @@ function MonthPicker({
       onRequestClose={onClose}
     >
       <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={styles.pickerSheet}>
-        <View style={styles.sheetHandle} />
-        <Text style={styles.pickerTitle}>Filter by Month</Text>
+      <View style={[styles.pickerSheet, { backgroundColor: colors.card }]}>
+        <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+        <Text style={[styles.pickerTitle, { color: colors.text }]}>Filter by Month</Text>
         {MONTHS.map((m) => (
           <Pressable
             key={m}
-            style={[styles.pickerRow, selected === m && styles.pickerRowActive]}
+            style={[
+              styles.pickerRow,
+              { backgroundColor: colors.inputBg ?? LIGHT },
+              selected === m && { backgroundColor: "#EEF4FD", borderWidth: 1.5, borderColor: BLUE },
+            ]}
             onPress={() => {
               onSelect(m);
               onClose();
@@ -351,7 +354,8 @@ function MonthPicker({
             <Text
               style={[
                 styles.pickerRowText,
-                selected === m && styles.pickerRowTextActive,
+                { color: colors.subtext },
+                selected === m && { color: BLUE, fontWeight: "800" },
               ]}
             >
               {m}
@@ -369,6 +373,8 @@ function MonthPicker({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function BookingsScreen() {
   const router = useRouter();
+  // ✅ FIX: useTheme must be called inside the component, not outside
+  const { colors } = useTheme();
 
   const [activeTab, setActiveTab] = useState("all");
   const [activeMonth, setActiveMonth] = useState("All Months");
@@ -385,7 +391,7 @@ export default function BookingsScreen() {
   }, [activeTab, activeMonth]);
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
       <TopBar
         location="Lagos, NG"
         notificationCount={3}
@@ -394,15 +400,15 @@ export default function BookingsScreen() {
       />
 
       {/* Page header + month filter */}
-      <View style={styles.pageHeader}>
+      <View style={[styles.pageHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View>
-          <Text style={styles.pageTitle}>My Bookings</Text>
-          <Text style={styles.pageSubtitle}>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>My Bookings</Text>
+          <Text style={[styles.pageSubtitle, { color: colors.subtext }]}>
             {filtered.length} booking{filtered.length !== 1 ? "s" : ""}
           </Text>
         </View>
         <Pressable
-          style={styles.monthBtn}
+          style={[styles.monthBtn, { backgroundColor: colors.inputBg ?? LIGHT, borderColor: colors.border }]}
           onPress={() => setShowMonthPicker(true)}
         >
           <Ionicons name="calendar-outline" size={14} color={BLUE} />
@@ -412,25 +418,30 @@ export default function BookingsScreen() {
       </View>
 
       {/* Summary strip */}
-      <SummaryStrip />
+      <SummaryStrip colors={colors} />
 
       {/* Status tabs */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.tabsOuter}
+        style={[styles.tabsOuter, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
         contentContainerStyle={styles.tabsScroll}
       >
         {TABS.map((tab) => (
           <Pressable
             key={tab.key}
-            style={[styles.tab, activeTab === tab.key && styles.tabActive]}
+            style={[
+              styles.tab,
+              { backgroundColor: colors.inputBg ?? LIGHT, borderColor: colors.border },
+              activeTab === tab.key && { backgroundColor: BLUE, borderColor: BLUE },
+            ]}
             onPress={() => setActiveTab(tab.key)}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === tab.key && styles.tabTextActive,
+                { color: colors.subtext },
+                activeTab === tab.key && { color: WHITE },
               ]}
             >
               {tab.label}
@@ -443,8 +454,8 @@ export default function BookingsScreen() {
       {filtered.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="calendar-outline" size={52} color="#CBD5E0" />
-          <Text style={styles.emptyTitle}>No bookings found</Text>
-          <Text style={styles.emptyDesc}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No bookings found</Text>
+          <Text style={[styles.emptyDesc, { color: colors.subtext }]}>
             {activeTab === "all"
               ? "You haven't made any bookings yet."
               : `No ${activeTab} bookings${activeMonth !== "All Months" ? ` in ${activeMonth}` : ""}.`}
@@ -466,6 +477,7 @@ export default function BookingsScreen() {
             renderItem={({ item }) => (
               <BookingCard
                 booking={item}
+                colors={colors}
                 onViewDetails={() => router.push("/(modals)/booking")}
                 onRebook={() => router.push("/(tabs)/search")}
                 onCancel={() => console.log("Cancel", item.id)}
@@ -480,6 +492,7 @@ export default function BookingsScreen() {
         selected={activeMonth}
         onSelect={setActiveMonth}
         onClose={() => setShowMonthPicker(false)}
+        colors={colors}
       />
 
       <Navbar />
@@ -489,7 +502,7 @@ export default function BookingsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: LIGHT },
+  root: { flex: 1 },
 
   pageHeader: {
     flexDirection: "row",
@@ -498,48 +511,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 14,
-    backgroundColor: WHITE,
+    borderBottomWidth: 1,
   },
   pageTitle: {
     fontSize: 22,
     fontWeight: "900",
-    color: BLUE,
     letterSpacing: -0.5,
   },
-  pageSubtitle: { fontSize: 12, color: GREY, fontWeight: "500", marginTop: 2 },
+  pageSubtitle: { fontSize: 12, fontWeight: "500", marginTop: 2 },
   monthBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: LIGHT,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: "#DDE4F0",
   },
   monthBtnText: { fontSize: 12, fontWeight: "700", color: BLUE },
 
   // Strip
   strip: {
     flexDirection: "row",
-    backgroundColor: WHITE,
     paddingHorizontal: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#EAF0FB",
   },
   stripItem: { flex: 1, alignItems: "center", paddingVertical: 6 },
-  stripBorder: { borderRightWidth: 1, borderRightColor: "#EAF0FB" },
   stripValue: { fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
-  stripLabel: { fontSize: 11, color: GREY, fontWeight: "600", marginTop: 2 },
+  stripLabel: { fontSize: 11, fontWeight: "600", marginTop: 2 },
 
   // Tabs
   tabsOuter: {
-    backgroundColor: WHITE,
     flexGrow: 0,
     borderBottomWidth: 1,
-    borderBottomColor: "#EAF0FB",
   },
   tabsScroll: {
     paddingHorizontal: 16,
@@ -551,20 +556,15 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 18,
     borderRadius: 20,
-    backgroundColor: LIGHT,
     borderWidth: 1,
-    borderColor: "#DDE4F0",
   },
-  tabActive: { backgroundColor: BLUE, borderColor: BLUE },
-  tabText: { fontSize: 13, fontWeight: "700", color: GREY },
-  tabTextActive: { color: WHITE },
+  tabText: { fontSize: 13, fontWeight: "700" },
 
   // List
   list: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24, gap: 14 },
 
   // Card
   card: {
-    backgroundColor: WHITE,
     borderRadius: 20,
     padding: 16,
     shadowColor: BLUE,
@@ -573,7 +573,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
     borderWidth: 1,
-    borderColor: "#EAF0FB",
   },
   cardHeader: {
     flexDirection: "row",
@@ -593,11 +592,10 @@ const styles = StyleSheet.create({
   cardService: {
     fontSize: 15,
     fontWeight: "800",
-    color: BLUE,
     marginBottom: 3,
     letterSpacing: -0.2,
   },
-  cardDesc: { fontSize: 12, color: GREY, fontWeight: "500" },
+  cardDesc: { fontSize: 12, fontWeight: "500" },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -608,7 +606,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   statusText: { fontSize: 10, fontWeight: "800" },
-  cardDivider: { height: 1, backgroundColor: "#EAF0FB", marginBottom: 12 },
+  cardDivider: { height: 1, marginBottom: 12 },
 
   cardMeta: { flexDirection: "row", gap: 16, marginBottom: 14 },
   metaItem: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
@@ -625,14 +623,13 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#EEF4FD",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  metaLabel: { fontSize: 10, color: GREY, fontWeight: "600", marginBottom: 1 },
-  metaValue: { fontSize: 12, fontWeight: "700", color: BLUE },
-  metaTime: { fontSize: 11, color: GREY, fontWeight: "500" },
+  metaLabel: { fontSize: 10, fontWeight: "600", marginBottom: 1 },
+  metaValue: { fontSize: 12, fontWeight: "700" },
+  metaTime: { fontSize: 11, fontWeight: "500" },
 
   cardFooter: {
     flexDirection: "row",
@@ -640,10 +637,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#EAF0FB",
   },
-  priceLabel: { fontSize: 10, color: GREY, fontWeight: "500", marginBottom: 2 },
-  price: { fontSize: 18, fontWeight: "900", color: BLUE },
+  priceLabel: { fontSize: 10, fontWeight: "500", marginBottom: 2 },
+  price: { fontSize: 18, fontWeight: "900" },
   cardActions: { flexDirection: "row", gap: 8, alignItems: "center" },
 
   rebookBtn: {
@@ -654,8 +650,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: BLUE,
-    backgroundColor: WHITE,
   },
   rebookText: { fontSize: 12, fontWeight: "700", color: BLUE },
   cancelBtn: {
@@ -686,8 +680,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     gap: 10,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: BLUE },
-  emptyDesc: { fontSize: 14, color: GREY, textAlign: "center", lineHeight: 21 },
+  emptyTitle: { fontSize: 18, fontWeight: "800" },
+  emptyDesc: { fontSize: 14, textAlign: "center", lineHeight: 21 },
   emptyBtn: {
     marginTop: 8,
     backgroundColor: GOLD,
@@ -711,7 +705,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: WHITE,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
@@ -721,14 +714,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#DDE4F0",
     alignSelf: "center",
     marginBottom: 20,
   },
   pickerTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: BLUE,
     marginBottom: 16,
     letterSpacing: -0.4,
   },
@@ -740,13 +731,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     marginBottom: 6,
-    backgroundColor: LIGHT,
   },
-  pickerRowActive: {
-    backgroundColor: "#EEF4FD",
-    borderWidth: 1.5,
-    borderColor: BLUE,
-  },
-  pickerRowText: { fontSize: 14, fontWeight: "600", color: GREY },
-  pickerRowTextActive: { color: BLUE, fontWeight: "800" },
+  pickerRowText: { fontSize: 14, fontWeight: "600" },
 });

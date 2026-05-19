@@ -21,6 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
+import useTheme  from "../../src/context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -451,7 +452,9 @@ function FilterSheet({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SearchScreen() {
+
   const router = useRouter();
+  const { colors } = useTheme();
 
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -517,8 +520,10 @@ export default function SearchScreen() {
   }, [query, activeCategory, filters]);
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      <TopBar
+    <SafeAreaView
+          style={[styles.root, { backgroundColor: colors.background }]}
+          edges={["top"]}
+        >  <TopBar
         location="Lagos, NG"
         notificationCount={3}
         initials="JD"
