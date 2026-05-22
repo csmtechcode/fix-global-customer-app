@@ -7,6 +7,8 @@ interface ThemeColors {
   background: string;
   panel: string;
   surface: string;
+  card: string;
+  cardAlt: string;
   textPrimary: string;
   textSecondary: string;
   accent: string;
@@ -15,9 +17,10 @@ interface ThemeColors {
   navBg: string;
   navBorder: string;
   icon: string;
-  card: string;
-  cardAlt: string;
+  hero: string;
   muted: string;
+  success: string;
+  danger: string;
   statusBarStyle: "light-content" | "dark-content";
 }
 
@@ -32,77 +35,57 @@ interface ThemeContextValue {
 }
 
 const lightColors: ThemeColors = {
-  background: "#F8FAFD",
+  background: "#F8F5EF",
   panel: "#FFFFFF",
-  surface: "#F4F7FD",
-  textPrimary: "#1A3C6E",
-  textSecondary: "#64748B",
-  accent: "#FFC300",
-  border: "#EAF0FB",
+  surface: "#F7F3EA",
+  card: "#FFFFFF",
+  cardAlt: "#FAF3DF",
+  textPrimary: "#1F334F",
+  textSecondary: "#5A6C8A",
+  accent: "#D4A92C",
+  border: "#E5DCCF",
   topBarBg: "#FFFFFF",
   navBg: "#FFFFFF",
-  navBorder: "#EAF0FB",
-  icon: "#1A3C6E",
-  card: "#FFFFFF",
-  cardAlt: "#F9FAFB",
-  muted: "#9CA3AF",
+  navBorder: "#E5EBF7",
+  icon: "#1E3A70",
+  hero: "#FEF4DA",
+  muted: "#7B8CA5",
+  success: "#1F9A5D",
+  danger: "#DC3144",
   statusBarStyle: "dark-content",
 };
 
-// const darkColors: ThemeColors = {
-//   background: "#0B1423",
-//   panel: "#0F172A",
-//   surface: "#111827",
-//   textPrimary: "#E2E8F0",
-//   textSecondary: "#94A3B8",
-//   accent: "#FACC15",
-//   border: "#1E293B",
-//   topBarBg: "#0F172A",
-//   navBg: "#0D1325",
-//   navBorder: "#1E293B",
-//   icon: "#F9FAFC",
-//   card: "#111827",
-//   cardAlt: "#111827",
-//   muted: "#64748B",
-//   statusBarStyle: "light-content",
-// };
-
 const darkColors: ThemeColors = {
-  background: "#0A0F1C",
-  panel: "#121A2B",
-  surface: "#1A2338",
-  textPrimary: "#F1F5F9",
-  textSecondary: "#94A3B8",
-  accent: "#FACC15",
-  border: "#2A374F",
-  topBarBg: "#121A2B",
-  navBg: "#0F1626",
-  navBorder: "#2A374F",
-  icon: "#E2E8F0",
-  card: "#1E2A44",
-  cardAlt: "#1A253D",
-  muted: "#64748B",
+  background: "#050916",
+  panel: "#0D1B34",
+  surface: "#122047",
+  card: "#172B52",
+  cardAlt: "#0F1B37",
+  textPrimary: "#F7F9FD",
+  textSecondary: "#A0B1D4",
+  accent: "#F4C539",
+  border: "#1E3151",
+  topBarBg: "#071426",
+  navBg: "#061121",
+  navBorder: "#172F57",
+  icon: "#E6EBFA",
+  hero: "#1E355F",
+  muted: "#8EA1C7",
+  success: "#23C66A",
+  danger: "#F36F79",
   statusBarStyle: "light-content",
 };
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const AVAILABLE_LANGUAGES: AppLanguage[] = [
-  "English",
-  "Français",
-  "Español",
-  "Hausa",
-];
+const AVAILABLE_LANGUAGES: AppLanguage[] = ["English", "Français", "Español", "Hausa"];
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
   const [language, setLanguage] = useState<AppLanguage>("English");
 
   const isDarkMode = themeMode === "dark";
-  const colors = useMemo(
-    () => (isDarkMode ? darkColors : lightColors),
-    [isDarkMode],
-  );
+  const colors = useMemo(() => (isDarkMode ? darkColors : lightColors), [isDarkMode]);
 
   const value = useMemo(
     () => ({
@@ -114,12 +97,10 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       colors,
       languages: AVAILABLE_LANGUAGES,
     }),
-    [themeMode, isDarkMode, language, colors],
+    [themeMode, isDarkMode, language, colors]
   );
 
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export default function useTheme() {
@@ -127,6 +108,5 @@ export default function useTheme() {
   if (!context) {
     throw new Error("useTheme must be used inside AppThemeProvider");
   }
-
   return context;
 }

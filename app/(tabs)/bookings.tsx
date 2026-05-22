@@ -16,15 +16,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
-import  useTheme  from "../../src/context/ThemeContext";
+import useTheme from "../../src/context/ThemeContext";
 
 // ─── Static Tokens ────────────────────────────────────────────────────────────
 const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
-const WHITE = "#FFFFFF";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const GREY = "#64748B";
-const LIGHT = "#F4F7FD";
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS = {
@@ -218,7 +213,7 @@ function SummaryStrip({ colors }: { colors: any }) {
           <Text style={[styles.stripValue, { color: item.color }]}>
             {item.value}
           </Text>
-          <Text style={[styles.stripLabel, { color: colors.subtext }]}>{item.label}</Text>
+          <Text style={[styles.stripLabel, { color: colors.textSecondary }]}>{item.label}</Text>
         </View>
       ))}
     </View>
@@ -232,12 +227,14 @@ function BookingCard({
   onRebook,
   onCancel,
   colors,
+  isDarkMode,
 }: {
   booking: (typeof ALL_BOOKINGS)[0];
   onViewDetails: () => void;
   onRebook: () => void;
   onCancel: () => void;
   colors: any;
+  isDarkMode: boolean;
 }) {
   const s = STATUS[booking.status];
 
@@ -249,12 +246,12 @@ function BookingCard({
           <Ionicons name={booking.icon} size={22} color={booking.iconColor} />
         </View>
         <View style={styles.cardHeaderInfo}>
-          <Text style={[styles.cardService, { color: colors.text }]}>{booking.service}</Text>
-          <Text style={[styles.cardDesc, { color: colors.subtext }]} numberOfLines={1}>
+          <Text style={[styles.cardService, { color: colors.textPrimary }]}>{booking.service}</Text>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={1}>
             {booking.desc}
           </Text>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>
+        <View style={[styles.statusBadge, { backgroundColor: isDarkMode ? colors.surface : s.bg }]}>
           <Ionicons name={s.icon} size={10} color={s.color} />
           <Text style={[styles.statusText, { color: s.color }]}>{s.label}</Text>
         </View>
@@ -266,21 +263,21 @@ function BookingCard({
       <View style={styles.cardMeta}>
         <View style={styles.metaItem}>
           <View style={[styles.proAvatar, { backgroundColor: booking.proBg }]}>
-            <Text style={styles.proInitials}>{booking.proInitials}</Text>
+            <Text style={[styles.proInitials, { color: colors.card }]}>{booking.proInitials}</Text>
           </View>
           <View>
-            <Text style={[styles.metaLabel, { color: colors.subtext }]}>Professional</Text>
-            <Text style={[styles.metaValue, { color: colors.text }]}>{booking.pro}</Text>
+            <Text style={[styles.metaLabel, { color: colors.textSecondary }]}>Professional</Text>
+            <Text style={[styles.metaValue, { color: colors.textPrimary }]}>{booking.pro}</Text>
           </View>
         </View>
         <View style={styles.metaItem}>
-          <View style={[styles.metaIcon, { backgroundColor: colors.inputBg ?? "#EEF4FD" }]}>
-            <Ionicons name="calendar-outline" size={16} color={BLUE} />
+          <View style={[styles.metaIcon, { backgroundColor: colors.surface }]}>
+            <Ionicons name="calendar-outline" size={16} color={colors.accent} />
           </View>
           <View>
-            <Text style={[styles.metaLabel, { color: colors.subtext }]}>Date & Time</Text>
-            <Text style={[styles.metaValue, { color: colors.text }]}>{booking.dateLabel}</Text>
-            <Text style={[styles.metaTime, { color: colors.subtext }]}>{booking.time}</Text>
+            <Text style={[styles.metaLabel, { color: colors.textSecondary }]}>Date & Time</Text>
+            <Text style={[styles.metaValue, { color: colors.textPrimary }]}>{booking.dateLabel}</Text>
+            <Text style={[styles.metaTime, { color: colors.textSecondary }]}>{booking.time}</Text>
           </View>
         </View>
       </View>
@@ -288,24 +285,28 @@ function BookingCard({
       {/* Footer */}
       <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.priceLabel, { color: colors.subtext }]}>Total</Text>
-          <Text style={[styles.price, { color: colors.text }]}>{booking.price}</Text>
+          <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
+          <Text style={[styles.price, { color: colors.textPrimary }]}>{booking.price}</Text>
         </View>
         <View style={styles.cardActions}>
           {(booking.status === "completed" || booking.status === "cancelled") && (
-            <Pressable style={[styles.rebookBtn, { borderColor: BLUE, backgroundColor: colors.card }]} onPress={onRebook}>
-              <Ionicons name="refresh-outline" size={13} color={BLUE} />
-              <Text style={styles.rebookText}>Rebook</Text>
+            <Pressable style={[styles.rebookBtn, { borderColor: colors.accent, backgroundColor: colors.card }]} onPress={onRebook}>
+              <Ionicons name="refresh-outline" size={13} color={colors.accent} />
+              <Text style={[styles.rebookText, { color: colors.accent }]}>Rebook</Text>
             </Pressable>
           )}
           {(booking.status === "active" || booking.status === "pending") && (
-            <Pressable style={styles.cancelBtn} onPress={onCancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <Pressable style={[styles.cancelBtn, { borderColor: colors.danger, backgroundColor: colors.cardAlt }]}
+              onPress={onCancel}
+            >
+              <Text style={[styles.cancelText, { color: colors.danger }]}>Cancel</Text>
             </Pressable>
           )}
-          <Pressable style={styles.detailsBtn} onPress={onViewDetails}>
-            <Text style={styles.detailsBtnText}>Details</Text>
-            <Ionicons name="chevron-forward" size={13} color={WHITE} />
+          <Pressable style={[styles.detailsBtn, { backgroundColor: colors.accent }]}
+            onPress={onViewDetails}
+          >
+            <Text style={[styles.detailsBtnText, { color: colors.card }]}>Details</Text>
+            <Ionicons name="chevron-forward" size={13} color={colors.card} />
           </Pressable>
         </View>
       </View>
@@ -337,14 +338,14 @@ function MonthPicker({
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={[styles.pickerSheet, { backgroundColor: colors.card }]}>
         <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-        <Text style={[styles.pickerTitle, { color: colors.text }]}>Filter by Month</Text>
+        <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>Filter by Month</Text>
         {MONTHS.map((m) => (
           <Pressable
             key={m}
             style={[
               styles.pickerRow,
-              { backgroundColor: colors.inputBg ?? LIGHT },
-              selected === m && { backgroundColor: "#EEF4FD", borderWidth: 1.5, borderColor: BLUE },
+              { backgroundColor: colors.surface },
+              selected === m && { backgroundColor: colors.cardAlt, borderWidth: 1.5, borderColor: colors.accent },
             ]}
             onPress={() => {
               onSelect(m);
@@ -354,14 +355,14 @@ function MonthPicker({
             <Text
               style={[
                 styles.pickerRowText,
-                { color: colors.subtext },
-                selected === m && { color: BLUE, fontWeight: "800" },
+                { color: colors.textSecondary },
+                selected === m && { color: colors.accent, fontWeight: "800" },
               ]}
             >
               {m}
             </Text>
             {selected === m && (
-              <Ionicons name="checkmark" size={18} color={BLUE} />
+              <Ionicons name="checkmark" size={18} color={colors.accent} />
             )}
           </Pressable>
         ))}
@@ -374,7 +375,7 @@ function MonthPicker({
 export default function BookingsScreen() {
   const router = useRouter();
   // ✅ FIX: useTheme must be called inside the component, not outside
-  const { colors } = useTheme();
+  const { colors, isDarkMode } = useTheme();
 
   const [activeTab, setActiveTab] = useState("all");
   const [activeMonth, setActiveMonth] = useState("All Months");
@@ -392,28 +393,32 @@ export default function BookingsScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+
+      {/* Top navigation bar */}
       <TopBar
         location="Lagos, NG"
         notificationCount={3}
         initials="JD"
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
 
       {/* Page header + month filter */}
       <View style={[styles.pageHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View>
-          <Text style={[styles.pageTitle, { color: colors.text }]}>My Bookings</Text>
-          <Text style={[styles.pageSubtitle, { color: colors.subtext }]}>
+          <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>My Bookings</Text>
+          <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
             {filtered.length} booking{filtered.length !== 1 ? "s" : ""}
           </Text>
         </View>
         <Pressable
-          style={[styles.monthBtn, { backgroundColor: colors.inputBg ?? LIGHT, borderColor: colors.border }]}
+          style={[styles.monthBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => setShowMonthPicker(true)}
         >
-          <Ionicons name="calendar-outline" size={14} color={BLUE} />
-          <Text style={styles.monthBtnText}>{activeMonth}</Text>
-          <Ionicons name="chevron-down" size={13} color={BLUE} />
+          <Ionicons name="calendar-outline" size={14} color={colors.accent} />
+          <Text style={[styles.monthBtnText, { color: colors.accent }]}>{activeMonth}</Text>
+          <Ionicons name="chevron-down" size={13} color={colors.accent} />
         </Pressable>
       </View>
 
@@ -432,16 +437,16 @@ export default function BookingsScreen() {
             key={tab.key}
             style={[
               styles.tab,
-              { backgroundColor: colors.inputBg ?? LIGHT, borderColor: colors.border },
-              activeTab === tab.key && { backgroundColor: BLUE, borderColor: BLUE },
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              activeTab === tab.key && { backgroundColor: colors.accent, borderColor: colors.accent },
             ]}
             onPress={() => setActiveTab(tab.key)}
           >
             <Text
               style={[
                 styles.tabText,
-                { color: colors.subtext },
-                activeTab === tab.key && { color: WHITE },
+                { color: colors.textSecondary },
+                activeTab === tab.key && { color: colors.card },
               ]}
             >
               {tab.label}
@@ -453,18 +458,18 @@ export default function BookingsScreen() {
       {/* List or empty */}
       {filtered.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="calendar-outline" size={52} color="#CBD5E0" />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No bookings found</Text>
-          <Text style={[styles.emptyDesc, { color: colors.subtext }]}>
+          <Ionicons name="calendar-outline" size={52} color={colors.border} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No bookings found</Text>
+          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
             {activeTab === "all"
               ? "You haven't made any bookings yet."
               : `No ${activeTab} bookings${activeMonth !== "All Months" ? ` in ${activeMonth}` : ""}.`}
           </Text>
           <Pressable
-            style={styles.emptyBtn}
+            style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
             onPress={() => router.push("/(tabs)/search")}
           >
-            <Text style={styles.emptyBtnText}>Find a Fixer</Text>
+            <Text style={[styles.emptyBtnText, { color: colors.card }]}>Find a Fixer</Text>
           </Pressable>
         </View>
       ) : (
@@ -478,6 +483,7 @@ export default function BookingsScreen() {
               <BookingCard
                 booking={item}
                 colors={colors}
+                isDarkMode={isDarkMode}
                 onViewDetails={() => router.push("/(modals)/booking")}
                 onRebook={() => router.push("/(tabs)/search")}
                 onCancel={() => console.log("Cancel", item.id)}
@@ -528,7 +534,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
   },
-  monthBtnText: { fontSize: 12, fontWeight: "700", color: BLUE },
+  monthBtnText: { fontSize: 12, fontWeight: "700" },
 
   // Strip
   strip: {
@@ -567,7 +573,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     padding: 16,
-    shadowColor: BLUE,
+    shadowColor: "#000000",
     shadowOpacity: 0.07,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -618,7 +624,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  proInitials: { fontSize: 12, fontWeight: "900", color: WHITE },
+  proInitials: { fontSize: 12, fontWeight: "900" },
   metaIcon: {
     width: 34,
     height: 34,
@@ -651,16 +657,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
   },
-  rebookText: { fontSize: 12, fontWeight: "700", color: BLUE },
+  rebookText: { fontSize: 12, fontWeight: "700" },
   cancelBtn: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
   },
-  cancelText: { fontSize: 12, fontWeight: "700", color: "#EF4444" },
+  cancelText: { fontSize: 12, fontWeight: "700" },
   detailsBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -668,9 +672,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: BLUE,
   },
-  detailsBtnText: { fontSize: 12, fontWeight: "800", color: WHITE },
+  detailsBtnText: { fontSize: 12, fontWeight: "800" },
 
   // Empty
   emptyState: {
@@ -684,12 +687,11 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 14, textAlign: "center", lineHeight: 21 },
   emptyBtn: {
     marginTop: 8,
-    backgroundColor: GOLD,
     paddingVertical: 11,
     paddingHorizontal: 24,
     borderRadius: 12,
   },
-  emptyBtnText: { fontSize: 14, fontWeight: "800", color: BLUE },
+  emptyBtnText: { fontSize: 14, fontWeight: "800" },
 
   // Month picker
   backdrop: {

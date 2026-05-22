@@ -173,27 +173,38 @@ const RECENT_BOOKINGS = [
 
 // Hero banner — greeting + promo strip
 function HeroBanner({ name = "John" }: { name?: string }) {
+  const { colors } = useTheme();
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <View style={styles.heroBanner}>
+    <View style={[styles.heroBanner, { backgroundColor: colors.hero }]}>
       {/* Blobs */}
-      <View style={styles.heroBlob1} />
-      <View style={styles.heroBlob2} />
+      <View style={[styles.heroBlob1, { backgroundColor: colors.surface + "18" }]} />
+      <View style={[styles.heroBlob2, { backgroundColor: colors.accent + "18" }]} />
 
       <View style={styles.heroContent}>
         <View>
-          <Text style={styles.heroGreeting}>{greeting},</Text>
-          <Text style={styles.heroName}>{name} 👋</Text>
-          <Text style={styles.heroSub}>What do you need fixed today?</Text>
+          <Text style={[styles.heroGreeting, { color: colors.textSecondary }]}>
+            {greeting},
+          </Text>
+          <Text style={[styles.heroName, { color: colors.textPrimary }]}>
+            {name} 👋
+          </Text>
+
+          <Text style={[styles.heroSub, { color: colors.textSecondary }]}>What do you need fixed today?</Text>
         </View>
 
         {/* Promo pill */}
-        <View style={styles.promoPill}>
+        <View
+          style={[
+            styles.promoPill,
+            { backgroundColor: colors.panel + "22", borderColor: colors.panel + "30" },
+          ]}
+        >
           <View style={styles.promoDot} />
-          <Text style={styles.promoText}>500+ Pros Ready</Text>
+          <Text style={[styles.promoText, { color: colors.accent }]}>500+ Pros Ready</Text>
         </View>
       </View>
     </View>
@@ -202,12 +213,17 @@ function HeroBanner({ name = "John" }: { name?: string }) {
 
 // Search bar — tappable, routes to search tab
 function SearchBar({ onPress }: { onPress: () => void }) {
+  const { colors } = useTheme();
+
   return (
-    <Pressable style={styles.searchBar} onPress={onPress}>
-      <Ionicons name="search-outline" size={18} color={GREY} />
-      <Text style={styles.searchPlaceholder}>Search for a service...</Text>
-      <View style={styles.searchFilter}>
-        <Ionicons name="options-outline" size={16} color={BLUE} />
+    <Pressable
+      style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      onPress={onPress}
+    >
+      <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+      <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Search for a service...</Text>
+      <View style={[styles.searchFilter, { backgroundColor: colors.cardAlt }]}>
+        <Ionicons name="options-outline" size={16} color={colors.icon} />
       </View>
     </Pressable>
   );
@@ -221,26 +237,39 @@ function CategoryChip({
   item: (typeof CATEGORIES)[0];
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+
   return (
-    <Pressable style={styles.categoryChip} onPress={onPress}>
+    <Pressable
+      style={[
+        styles.categoryChip,
+        { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
+      ]}
+      onPress={onPress}
+    >
       <View style={[styles.categoryIcon, { backgroundColor: item.bg }]}>
         <Ionicons name={item.icon as any} size={22} color={item.color} />
       </View>
-      <Text style={styles.categoryLabel}>{item.label}</Text>
+      <Text style={[styles.categoryLabel, { color: colors.textPrimary }]}>
+        {item.label}
+      </Text>
     </Pressable>
   );
 }
 
-// Pro card (horizontal scroll)
 function ProCard({
-  pro,
-  onPress,
+  pro, onPress,
 }: {
   pro: (typeof PROS)[0];
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+
   return (
-    <Pressable style={styles.proCard} onPress={onPress}>
+    <Pressable
+      style={[styles.proCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+    >
       {/* Tag */}
       <View style={[styles.proTag, { backgroundColor: pro.tagColor }]}>
         <Text style={[styles.proTagText, { color: pro.tagText }]}>
@@ -253,56 +282,57 @@ function ProCard({
         <Text style={styles.proInitials}>{pro.initials}</Text>
       </View>
 
-      <Text style={styles.proName}>{pro.name}</Text>
-      <Text style={styles.proTrade}>{pro.trade}</Text>
+      <Text style={[styles.proName, { color: colors.textPrimary }]}>{pro.name}</Text>
+      <Text style={[styles.proTrade, { color: colors.textSecondary }]}>{pro.trade}</Text>
 
       {/* Rating row */}
       <View style={styles.proRatingRow}>
-        <Ionicons name="star" size={12} color={GOLD} />
-        <Text style={styles.proRating}>{pro.rating}</Text>
-        <Text style={styles.proJobs}>· {pro.jobs} jobs</Text>
+        <Ionicons name="star" size={12} color={colors.accent} />
+        <Text style={[styles.proRating, { color: colors.textPrimary }]}>{pro.rating}</Text>
+        <Text style={[styles.proJobs, { color: colors.textSecondary }]}>· {pro.jobs} jobs</Text>
       </View>
 
       {/* Price + Book */}
       <View style={styles.proPriceRow}>
-        <Text style={styles.proPrice}>{pro.price}/hr</Text>
-        <View style={styles.proBookBtn}>
-          <Text style={styles.proBookText}>Book</Text>
+        <Text style={[styles.proPrice, { color: colors.textPrimary }]}>{pro.price}/hr</Text>
+        <View style={[styles.proBookBtn, { backgroundColor: colors.accent }]}>
+          <Text style={[styles.proBookText, { color: colors.card }]}>Book</Text>
         </View>
       </View>
     </Pressable>
   );
 }
 
-// Active booking card
 function ActiveBookingCard({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable style={styles.activeCard} onPress={onPress}>
-      {/* Left accent */}
-      <View style={styles.activeAccent} />
+  const { colors } = useTheme();
 
+  return (
+    <Pressable
+      style={[styles.activeCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+    >
       <View style={styles.activeContent}>
         <View style={styles.activeLeft}>
-          <View style={styles.activeIconBox}>
-            <Ionicons name="water-outline" size={20} color="#3B82F6" />
+          <View style={[styles.activeIconBox, { backgroundColor: colors.cardAlt }]}>
+            <Ionicons name="water-outline" size={20} color={colors.accent} />
           </View>
           <View>
-            <Text style={styles.activeTitle}>Plumbing Service</Text>
-            <Text style={styles.activePro}>Chukwudi A. • Today, 2:00 PM</Text>
+            <Text style={[styles.activeTitle, { color: colors.textPrimary }]}>Plumbing Service</Text>
+            <Text style={[styles.activePro, { color: colors.textSecondary }]}>Chukwudi A. • Today, 2:00 PM</Text>
           </View>
         </View>
 
-        <View style={styles.activeStatus}>
-          <View style={styles.activePulse} />
-          <Text style={styles.activeStatusText}>En Route</Text>
+        <View style={[styles.activeStatus, { backgroundColor: colors.surface }]}>
+          <View style={[styles.activePulse, { backgroundColor: colors.success }]} />
+          <Text style={[styles.activeStatusText, { color: colors.success }]}>En Route</Text>
         </View>
       </View>
 
       {/* Progress bar */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: "65%" }]} />
+      <View style={[styles.progressTrack, { backgroundColor: colors.cardAlt }]}>
+        <View style={[styles.progressFill, { width: "65%", backgroundColor: colors.accent }]} />
       </View>
-      <Text style={styles.progressLabel}>Pro is 8 mins away</Text>
+      <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Pro is 8 mins away</Text>
     </Pressable>
   );
 }
@@ -315,14 +345,16 @@ function RecentRow({
   item: (typeof RECENT_BOOKINGS)[0];
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+
   return (
-    <Pressable style={styles.recentRow} onPress={onPress}>
+    <Pressable style={[styles.recentRow, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onPress}>
       <View style={[styles.recentIcon, { backgroundColor: item.iconBg }]}>
         <Ionicons name={item.icon as any} size={20} color={item.iconColor} />
       </View>
       <View style={styles.recentInfo}>
-        <Text style={styles.recentTrade}>{item.trade}</Text>
-        <Text style={styles.recentPro}>
+        <Text style={[styles.recentTrade, { color: colors.textPrimary }]}>{item.trade}</Text>
+        <Text style={[styles.recentPro, { color: colors.textSecondary }]}>
           {item.pro} · {item.date}
         </Text>
       </View>
@@ -351,7 +383,7 @@ export default function HomeScreen() {
         location="Lagos, NG"
         notificationCount={3}
         initials="JD"
-        onNotificationPress={() => router.push("/profile/notifications")}
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
@@ -371,9 +403,9 @@ export default function HomeScreen() {
         {/* ── Active booking (only show if there's one) ─────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Booking</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Active Booking</Text>
             <Pressable onPress={() => router.push("/(tabs)/bookings")}>
-              <Text style={styles.seeAll}>See all →</Text>
+              <Text style={[styles.seeAll, { color: colors.accent }]}>See all →</Text>
             </Pressable>
           </View>
           <ActiveBookingCard onPress={() => router.push("/(modals)/booking")} />
@@ -382,9 +414,9 @@ export default function HomeScreen() {
         {/* ── Categories ────────────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Services</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Services</Text>
             <Pressable onPress={() => router.push("/(tabs)/search")}>
-              <Text style={styles.seeAll}>See all →</Text>
+              <Text style={[styles.seeAll, { color: colors.accent }]}>See all →</Text>
             </Pressable>
           </View>
           <View style={styles.categoryGrid}>
@@ -401,9 +433,9 @@ export default function HomeScreen() {
         {/* ── Featured Pros ──────────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Pros Near You</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Top Pros Near You</Text>
             <Pressable onPress={() => router.push("/(tabs)/search")}>
-              <Text style={styles.seeAll}>See all →</Text>
+              <Text style={[styles.seeAll, { color: colors.accent }]}>See all →</Text>
             </Pressable>
           </View>
           <FlatList
@@ -424,9 +456,9 @@ export default function HomeScreen() {
         {/* ── Recent Bookings ───────────────────────────────────────── */}
         <View style={[styles.section, { paddingHorizontal: 20 }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Bookings</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Bookings</Text>
             <Pressable onPress={() => router.push("/(tabs)/bookings")}>
-              <Text style={styles.seeAll}>See all →</Text>
+              <Text style={[styles.seeAll, { color: colors.accent }]}>See all →</Text>
             </Pressable>
           </View>
           <View style={styles.recentList}>
@@ -442,15 +474,15 @@ export default function HomeScreen() {
 
         {/* ── Promo banner ──────────────────────────────────────────── */}
         <View style={[styles.section, { paddingHorizontal: 20 }]}>
-          <Pressable style={styles.promoBanner}>
-            <View style={styles.promoBannerBlob} />
+          <Pressable style={[styles.promoBanner, { backgroundColor: colors.card }]}>
+            <View style={[styles.promoBannerBlob, { backgroundColor: colors.surface + "18" }]} />
             <View>
-              <Text style={styles.promoBannerTitle}>Invite & Earn 🎁</Text>
-              <Text style={styles.promoBannerSub}>
+              <Text style={[styles.promoBannerTitle, { color: colors.textPrimary }]}>Invite & Earn 🎁</Text>
+              <Text style={[styles.promoBannerSub, { color: colors.textSecondary }]}>
                 Get ₦1,000 for every friend{"\n"}who books their first service.
               </Text>
-              <View style={styles.promoBannerBtn}>
-                <Text style={styles.promoBannerBtnText}>Invite Friends</Text>
+              <View style={[styles.promoBannerBtn, { backgroundColor: colors.accent }]}>
+                <Text style={[styles.promoBannerBtnText, { color: colors.card }]}>Invite Friends</Text>
               </View>
             </View>
           </Pressable>
@@ -613,16 +645,6 @@ const styles = StyleSheet.create({
     borderColor: "#EAF0FB",
     overflow: "hidden",
   },
-  activeAccent: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    // width: 4,
-    backgroundColor: GOLD,
-    borderTopLeftRadius: 18,
-    borderBottomLeftRadius: 18,
-  },
   activeContent: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -686,6 +708,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     paddingVertical: 10,
+    borderRadius: 18,
   },
   categoryIcon: {
     width: 54,

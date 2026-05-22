@@ -1,10 +1,10 @@
 // app/profile/saved_addresses.tsx
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,17 +13,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import useTheme from "../../src/context/ThemeContext";
+import TopBar from "../../src/components/layout/TopBar";
+import Navbar from "../../src/components/layout/Navbar";
 
-// ── Brand tokens (same as profile.tsx) ──────────────────────────────────────
-const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
-const WHITE = "#FFFFFF";
-const LIGHT = "#F4F7FD";
-const GREY = "#64748B";
-const DANGER = "#EF4444";
-const BORDER = "#EAF0FB";
-
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 type AddressType = "home" | "work" | "other";
 
 interface SavedAddress {
@@ -35,7 +31,7 @@ interface SavedAddress {
   isDefault: boolean;
 }
 
-// ── Mock data (replace with API/store later) ─────────────────────────────────
+// ── Mock data ─────────────────────────────────────────────────────────────────
 const INITIAL_ADDRESSES: SavedAddress[] = [
   {
     id: "1",
@@ -62,47 +58,35 @@ const INITIAL_ADDRESSES: SavedAddress[] = [
   },
 ];
 
-// ── Icon + colour per address type ───────────────────────────────────────────
-const TYPE_CONFIG: Record<
-  AddressType,
-  { icon: string; bg: string; color: string }
-> = {
-  home: { icon: "home-outline", bg: "#EEF4FD", color: BLUE },
-  work: { icon: "briefcase-outline", bg: "#FFF8E1", color: "#B8860B" },
-  other: { icon: "location-outline", bg: "#F0FDF4", color: "#16A34A" },
+// ── Type config ───────────────────────────────────────────────────────────────
+const TYPE_META: Record<AddressType, { icon: string; label: string }> = {
+  home: { icon: "home-outline", label: "Home" },
+  work: { icon: "briefcase-outline", label: "Work" },
+  other: { icon: "location-outline", label: "Other" },
 };
 
-// ── Blank form ────────────────────────────────────────────────────────────────
-const BLANK_FORM = {
-  label: "",
-  type: "home" as AddressType,
-  address: "",
-  landmark: "",
+const BLANK: { label: string; type: AddressType; address: string; landmark: string } = {
+  label: "", type: "home", address: "", landmark: "",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Main Screen ───────────────────────────────────────────────────────────────
 export default function SavedAddressesScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [addresses, setAddresses] = useState<SavedAddress[]>(INITIAL_ADDRESSES);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(BLANK_FORM);
+  const [form, setForm] = useState(BLANK);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   const openAdd = () => {
     setEditingId(null);
-    setForm(BLANK_FORM);
+    setForm(BLANK);
     setModalVisible(true);
   };
 
   const openEdit = (addr: SavedAddress) => {
     setEditingId(addr.id);
-    setForm({
-      label: addr.label,
-      type: addr.type,
-      address: addr.address,
-      landmark: addr.landmark ?? "",
-    });
+    setForm({ label: addr.label, type: addr.type, address: addr.address, landmark: addr.landmark ?? "" });
     setModalVisible(true);
   };
 
@@ -111,65 +95,72 @@ export default function SavedAddressesScreen() {
       Alert.alert("Missing info", "Please fill in the label and full address.");
       return;
     }
-
     if (editingId) {
       setAddresses((prev) =>
-        prev.map((a) =>
-          a.id === editingId
-            ? { ...a, ...form, landmark: form.landmark || undefined }
-            : a,
-        ),
+        prev.map((a) => a.id === editingId ? { ...a, ...form, landmark: form.landmark || undefined } : a)
       );
     } else {
-      const newAddr: SavedAddress = {
-        id: Date.now().toString(),
-        ...form,
-        landmark: form.landmark || undefined,
-        isDefault: addresses.length === 0,
-      };
-      setAddresses((prev) => [...prev, newAddr]);
+      setAddresses((prev) => [
+        ...prev,
+        { id: Date.now().toString(), ...form, landmark: form.landmark || undefined, isDefault: prev.length === 0 },
+      ]);
     }
     setModalVisible(false);
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      "Remove Address",
-      "Are you sure you want to remove this address?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () =>
-            setAddresses((prev) => prev.filter((a) => a.id !== id)),
-        },
-      ],
-    );
+    Alert.alert("Remove Address", "Are you sure you want to remove this address?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => setAddresses((prev) => prev.filter((a) => a.id !== id)) },
+    ]);
   };
 
   const setDefault = (id: string) => {
     setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={BLUE} />
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+
+      {/* ── TopBar ─────────────────────────────────────────────── */}
+      <TopBar
+        location="Saved Addresses"
+        notificationCount={0}
+        initials="JD"
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
+        onAvatarPress={() => router.push("/(tabs)/profile")}
+      />
+
+      {/* ── Page header row ────────────────────────────────────── */}
+      <View style={[styles.pageHeader, { borderBottomColor: colors.border }]}>
+        <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.surface }]}>
+          <Ionicons name="arrow-back" size={20} color={colors.icon} />
         </Pressable>
-        <Text style={styles.topBarTitle}>Saved Addresses</Text>
-        <Pressable onPress={openAdd} style={styles.addBtn}>
-          <Ionicons name="add" size={22} color={WHITE} />
+        <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Saved Addresses</Text>
+        <Pressable onPress={openAdd} style={[styles.addBtn, { backgroundColor: colors.icon }]}>
+          <Ionicons name="add" size={20} color={colors.card} />
         </Pressable>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {/* ── Hero strip ─────────────────────────────────────────── */}
+        <View style={[styles.heroBanner, { backgroundColor: colors.hero }]}>
+          <View style={[styles.heroBlob, { backgroundColor: colors.accent + "18" }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>Your Locations</Text>
+            <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
+              Saved spots for faster booking — pros come to you.
+            </Text>
+          </View>
+          <View style={[styles.heroPill, { backgroundColor: colors.accent + "22", borderColor: colors.accent + "44" }]}>
+            <View style={[styles.heroDot, { backgroundColor: colors.accent }]} />
+            <Text style={[styles.heroPillText, { color: colors.accent }]}>{addresses.length} Saved</Text>
+          </View>
+        </View>
+
+        {/* ── Address cards ──────────────────────────────────────── */}
         {addresses.length === 0 ? (
           <EmptyState onAdd={openAdd} />
         ) : (
@@ -184,178 +175,209 @@ export default function SavedAddressesScreen() {
               />
             ))}
 
-            {/* Add new — ghost card */}
-            <Pressable style={styles.addGhostCard} onPress={openAdd}>
-              <View style={styles.addGhostIcon}>
-                <Ionicons name="add" size={24} color={BLUE} />
+            {/* Ghost add card */}
+            <Pressable
+              style={[styles.ghostCard, { borderColor: colors.icon + "55" }]}
+              onPress={openAdd}
+            >
+              <View style={[styles.ghostIcon, { backgroundColor: colors.surface }]}>
+                <Ionicons name="add" size={22} color={colors.icon} />
               </View>
-              <Text style={styles.addGhostText}>Add New Address</Text>
+              <Text style={[styles.ghostText, { color: colors.icon }]}>Add New Address</Text>
             </Pressable>
           </>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* ── Add / Edit Modal ── */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setModalVisible(false)}
-        />
-        <View style={styles.modalSheet}>
-          {/* Handle */}
-          <View style={styles.modalHandle} />
-
-          <Text style={styles.modalTitle}>
-            {editingId ? "Edit Address" : "Add New Address"}
-          </Text>
-
-          {/* Type selector */}
-          <Text style={styles.fieldLabel}>Address Type</Text>
-          <View style={styles.typeRow}>
-            {(["home", "work", "other"] as AddressType[]).map((t) => {
-              const cfg = TYPE_CONFIG[t];
-              const active = form.type === t;
-              return (
-                <Pressable
-                  key={t}
-                  style={[styles.typeChip, active && styles.typeChipActive]}
-                  onPress={() => setForm((f) => ({ ...f, type: t }))}
-                >
-                  <Ionicons
-                    name={cfg.icon as any}
-                    size={16}
-                    color={active ? WHITE : BLUE}
-                  />
-                  <Text
-                    style={[
-                      styles.typeChipText,
-                      active && styles.typeChipTextActive,
-                    ]}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Label */}
-          <Text style={styles.fieldLabel}>Label</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Mum's Place"
-            placeholderTextColor={GREY}
-            value={form.label}
-            onChangeText={(v) => setForm((f) => ({ ...f, label: v }))}
+      {/* ── Add / Edit Modal ──────────────────────────────────────── */}
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)} />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+          <AddressForm
+            form={form}
+            setForm={setForm}
+            editingId={editingId}
+            onSave={handleSave}
+            onClose={() => setModalVisible(false)}
           />
-
-          {/* Full Address */}
-          <Text style={styles.fieldLabel}>Full Address</Text>
-          <TextInput
-            style={[styles.input, styles.inputTall]}
-            placeholder="Street, area, city, state"
-            placeholderTextColor={GREY}
-            multiline
-            numberOfLines={3}
-            value={form.address}
-            onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
-          />
-
-          {/* Landmark */}
-          <Text style={styles.fieldLabel}>Landmark (optional)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Near GTBank, Behind stadium"
-            placeholderTextColor={GREY}
-            value={form.landmark}
-            onChangeText={(v) => setForm((f) => ({ ...f, landmark: v }))}
-          />
-
-          {/* Save */}
-          <Pressable style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveBtnText}>
-              {editingId ? "Save Changes" : "Add Address"}
-            </Text>
-          </Pressable>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
+
+      <Navbar />
     </SafeAreaView>
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
+// ── AddressCard ───────────────────────────────────────────────────────────────
 function AddressCard({
-  addr,
-  onEdit,
-  onDelete,
-  onSetDefault,
+  addr, onEdit, onDelete, onSetDefault,
 }: {
   addr: SavedAddress;
   onEdit: () => void;
   onDelete: () => void;
   onSetDefault: () => void;
 }) {
-  const cfg = TYPE_CONFIG[addr.type];
+  const { colors } = useTheme();
+  const meta = TYPE_META[addr.type];
+
   return (
-    <View style={styles.card}>
-      {/* Icon + text */}
-      <View style={styles.cardLeft}>
-        <View style={[styles.cardIcon, { backgroundColor: cfg.bg }]}>
-          <Ionicons name={cfg.icon as any} size={22} color={cfg.color} />
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Default ribbon */}
+      {addr.isDefault && (
+        <View style={[styles.defaultRibbon, { backgroundColor: colors.accent }]}>
+          <Text style={[styles.defaultRibbonText, { color: colors.card }]}>Default</Text>
+        </View>
+      )}
+
+      <View style={styles.cardTop}>
+        {/* Icon */}
+        <View style={[styles.cardIconBox, { backgroundColor: colors.surface }]}>
+          <Ionicons name={meta.icon as any} size={22} color={colors.icon} />
         </View>
 
+        {/* Info */}
         <View style={{ flex: 1 }}>
-          <View style={styles.cardLabelRow}>
-            <Text style={styles.cardLabel}>{addr.label}</Text>
-            {addr.isDefault && (
-              <View style={styles.defaultBadge}>
-                <Text style={styles.defaultBadgeText}>Default</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.cardAddress}>{addr.address}</Text>
+          <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>{addr.label}</Text>
+          <Text style={[styles.cardTypeBadgeText, { color: colors.accent }]}>{meta.label}</Text>
+          <Text style={[styles.cardAddress, { color: colors.textSecondary }]}>{addr.address}</Text>
           {addr.landmark ? (
-            <Text style={styles.cardLandmark}>📍 {addr.landmark}</Text>
+            <Text style={[styles.cardLandmark, { color: colors.muted }]}>📍 {addr.landmark}</Text>
           ) : null}
         </View>
       </View>
 
       {/* Actions */}
-      <View style={styles.cardActions}>
+      <View style={[styles.cardActions, { borderTopColor: colors.border }]}>
         {!addr.isDefault && (
-          <Pressable style={styles.actionBtn} onPress={onSetDefault}>
-            <Ionicons name="star-outline" size={18} color={GOLD} />
+          <Pressable style={[styles.actionChip, { backgroundColor: colors.cardAlt }]} onPress={onSetDefault}>
+            <Ionicons name="star-outline" size={14} color={colors.accent} />
+            <Text style={[styles.actionChipText, { color: colors.accent }]}>Set Default</Text>
           </Pressable>
         )}
-        <Pressable style={styles.actionBtn} onPress={onEdit}>
-          <Ionicons name="pencil-outline" size={18} color={BLUE} />
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={onDelete}>
-          <Ionicons name="trash-outline" size={18} color={DANGER} />
-        </Pressable>
+        <View style={styles.actionIconRow}>
+          <Pressable style={[styles.actionIconBtn, { backgroundColor: colors.surface }]} onPress={onEdit}>
+            <Ionicons name="pencil-outline" size={17} color={colors.icon} />
+          </Pressable>
+          <Pressable style={[styles.actionIconBtn, { backgroundColor: colors.surface }]} onPress={onDelete}>
+            <Ionicons name="trash-outline" size={17} color={colors.danger} />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
+// ── AddressForm (modal sheet) ─────────────────────────────────────────────────
+function AddressForm({
+  form, setForm, editingId, onSave, onClose,
+}: {
+  form: typeof BLANK;
+  setForm: React.Dispatch<React.SetStateAction<typeof BLANK>>;
+  editingId: string | null;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name="location-outline" size={48} color={BLUE} />
+    <View style={[styles.sheet, { backgroundColor: colors.panel }]}>
+      <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+
+      <View style={styles.sheetHeader}>
+        <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
+          {editingId ? "Edit Address" : "Add New Address"}
+        </Text>
+        <Pressable onPress={onClose} style={[styles.sheetCloseBtn, { backgroundColor: colors.surface }]}>
+          <Ionicons name="close" size={18} color={colors.icon} />
+        </Pressable>
       </View>
-      <Text style={styles.emptyTitle}>No Saved Addresses</Text>
-      <Text style={styles.emptySubtitle}>
+
+      {/* Type selector */}
+      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Type</Text>
+      <View style={styles.typeRow}>
+        {(["home", "work", "other"] as AddressType[]).map((t) => {
+          const active = form.type === t;
+          const meta = TYPE_META[t];
+          return (
+            <Pressable
+              key={t}
+              style={[
+                styles.typeChip,
+                { backgroundColor: active ? colors.icon : colors.surface },
+              ]}
+              onPress={() => setForm((f) => ({ ...f, type: t }))}
+            >
+              <Ionicons name={meta.icon as any} size={15} color={active ? colors.card : colors.icon} />
+              <Text style={[styles.typeChipText, { color: active ? colors.card : colors.icon }]}>
+                {meta.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Label */}
+      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Label</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+        placeholder="e.g. Mum's Place"
+        placeholderTextColor={colors.muted}
+        value={form.label}
+        onChangeText={(v) => setForm((f) => ({ ...f, label: v }))}
+      />
+
+      {/* Full address */}
+      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Full Address</Text>
+      <TextInput
+        style={[styles.input, styles.inputTall, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+        placeholder="Street, area, city, state"
+        placeholderTextColor={colors.muted}
+        multiline
+        numberOfLines={3}
+        textAlignVertical="top"
+        value={form.address}
+        onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
+      />
+
+      {/* Landmark */}
+      <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Landmark (optional)</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+        placeholder="e.g. Near GTBank, Behind stadium"
+        placeholderTextColor={colors.muted}
+        value={form.landmark}
+        onChangeText={(v) => setForm((f) => ({ ...f, landmark: v }))}
+      />
+
+      {/* Save */}
+      <Pressable style={[styles.saveBtn, { backgroundColor: colors.icon }]} onPress={onSave}>
+        <Ionicons name="checkmark" size={18} color={colors.card} />
+        <Text style={[styles.saveBtnText, { color: colors.card }]}>
+          {editingId ? "Save Changes" : "Add Address"}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={[styles.emptyBlob, { backgroundColor: colors.surface }]} />
+      <View style={[styles.emptyIconBox, { backgroundColor: colors.surface }]}>
+        <Ionicons name="location-outline" size={36} color={colors.accent} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No Saved Addresses</Text>
+      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
         Add your home, work, or other locations so pros can find you faster.
       </Text>
-      <Pressable style={styles.emptyBtn} onPress={onAdd}>
-        <Text style={styles.emptyBtnText}>Add Your First Address</Text>
+      <Pressable style={[styles.emptyBtn, { backgroundColor: colors.icon }]} onPress={onAdd}>
+        <Ionicons name="add" size={16} color={colors.card} />
+        <Text style={[styles.emptyBtnText, { color: colors.card }]}>Add Your First Address</Text>
       </Pressable>
     </View>
   );
@@ -363,276 +385,249 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F8FAFD" },
-  scroll: { padding: 20, paddingBottom: 40 },
+  root: { flex: 1 },
+  scroll: { padding: 20, paddingBottom: 24 },
 
-  // Top bar
-  topBar: {
+  // Page header
+  pageHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: WHITE,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: LIGHT,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
-  topBarTitle: {
-    fontSize: 18,
+  pageTitle: {
+    fontSize: 17,
     fontWeight: "800",
-    color: BLUE,
+    letterSpacing: -0.3,
   },
   addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: BLUE,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  // Address card
-  card: {
-    backgroundColor: WHITE,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardLeft: {
+  // Hero
+  heroBanner: {
+    borderRadius: 20,
+    padding: 20,
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 10,
+    alignItems: "center",
+    justifyContent: "space-between",
+    overflow: "hidden",
+    marginBottom: 20,
+    minHeight: 80,
   },
-  cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  heroBlob: {
+    position: "absolute",
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    top: -45,
+    right: -25,
+  },
+  heroTitle: { fontSize: 17, fontWeight: "900", letterSpacing: -0.4, marginBottom: 4 },
+  heroSub: { fontSize: 13, fontWeight: "500", lineHeight: 18, maxWidth: 200 },
+  heroPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  heroDot: { width: 7, height: 7, borderRadius: 4 },
+  heroPillText: { fontSize: 12, fontWeight: "800" },
+
+  // Card
+  card: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  defaultRibbon: {
+    position: "absolute",
+    top: 14,
+    right: -1,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  defaultRibbonText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 14, marginBottom: 14 },
+  cardIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  cardLabel: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: BLUE,
-  },
-  defaultBadge: {
-    backgroundColor: "#EEF4FD",
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: BLUE,
-  },
-  defaultBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: BLUE,
-  },
-  cardAddress: {
-    fontSize: 13,
-    color: GREY,
-    lineHeight: 18,
-  },
-  cardLandmark: {
-    fontSize: 12,
-    color: GREY,
-    marginTop: 4,
-    fontStyle: "italic",
-  },
+  cardLabel: { fontSize: 16, fontWeight: "800", letterSpacing: -0.3, marginBottom: 2 },
+  cardTypeBadgeText: { fontSize: 12, fontWeight: "700", marginBottom: 4 },
+  cardAddress: { fontSize: 13, lineHeight: 18, fontWeight: "500" },
+  cardLandmark: { fontSize: 12, marginTop: 4, fontStyle: "italic" },
   cardActions: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
+    alignItems: "center",
+    justifyContent: "space-between",
     borderTopWidth: 1,
-    borderTopColor: BORDER,
-    paddingTop: 10,
+    paddingTop: 12,
   },
-  actionBtn: {
+  actionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  actionChipText: { fontSize: 12, fontWeight: "700" },
+  actionIconRow: { flexDirection: "row", gap: 8 },
+  actionIconBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: LIGHT,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  // Add ghost card
-  addGhostCard: {
+  // Ghost add card
+  ghostCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: WHITE,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: BLUE,
     borderStyle: "dashed",
-    padding: 16,
-    gap: 12,
+    padding: 18,
+    gap: 14,
     marginBottom: 14,
   },
-  addGhostIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#EEF4FD",
+  ghostIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  addGhostText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: BLUE,
-  },
+  ghostText: { fontSize: 15, fontWeight: "700" },
 
-  // Empty state
-  emptyContainer: {
+  // Empty
+  emptyCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 36,
     alignItems: "center",
-    paddingTop: 60,
-    paddingHorizontal: 30,
+    overflow: "hidden",
+    marginBottom: 14,
   },
-  emptyIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#EEF4FD",
+  emptyBlob: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    top: -80,
+    right: -60,
+  },
+  emptyIconBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: BLUE,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: GREY,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 28,
-  },
+  emptyTitle: { fontSize: 17, fontWeight: "800", marginBottom: 8, letterSpacing: -0.3 },
+  emptyText: { fontSize: 14, textAlign: "center", lineHeight: 20, fontWeight: "500", marginBottom: 24 },
   emptyBtn: {
-    backgroundColor: BLUE,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 24,
+    borderRadius: 14,
   },
-  emptyBtnText: {
-    color: WHITE,
-    fontWeight: "700",
-    fontSize: 15,
-  },
+  emptyBtnText: { fontSize: 14, fontWeight: "800" },
 
   // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  modalSheet: {
-    backgroundColor: WHITE,
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+  sheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
-    paddingBottom: 40,
+    paddingBottom: 44,
   },
-  modalHandle: {
+  sheetHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: BORDER,
     alignSelf: "center",
     marginBottom: 20,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: BLUE,
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
+  },
+  sheetTitle: { fontSize: 20, fontWeight: "900", letterSpacing: -0.4 },
+  sheetCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Form
   fieldLabel: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "700",
-    color: GREY,
-    marginBottom: 8,
-    marginTop: 14,
+    letterSpacing: 0.6,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginTop: 16,
   },
   input: {
-    backgroundColor: LIGHT,
     borderRadius: 14,
-    padding: 14,
-    fontSize: 15,
-    color: BLUE,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 14,
+    fontWeight: "500",
     borderWidth: 1,
-    borderColor: BORDER,
   },
-  inputTall: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  typeRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  inputTall: { minHeight: 82 },
+  typeRow: { flexDirection: "row", gap: 10 },
   typeChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 30,
-    backgroundColor: "#EEF4FD",
-    borderWidth: 1,
-    borderColor: BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
   },
-  typeChipActive: {
-    backgroundColor: BLUE,
-    borderColor: BLUE,
-  },
-  typeChipText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: BLUE,
-  },
-  typeChipTextActive: {
-    color: WHITE,
-  },
-
-  // Save button
+  typeChipText: { fontSize: 13, fontWeight: "700" },
   saveBtn: {
-    backgroundColor: BLUE,
-    borderRadius: 30,
-    paddingVertical: 16,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 16,
+    paddingVertical: 15,
     marginTop: 24,
   },
-  saveBtnText: {
-    color: WHITE,
-    fontWeight: "800",
-    fontSize: 16,
-  },
+  saveBtnText: { fontWeight: "800", fontSize: 15 },
 });

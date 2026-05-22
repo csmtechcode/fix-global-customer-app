@@ -160,7 +160,8 @@ export default function ForgotPasswordScreen() {
           useNativeDriver: true,
         }),
       ]).start();
-    } catch (_) {
+    } catch (err) {
+      console.warn(err);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);

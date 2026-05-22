@@ -7,8 +7,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import TopBar from "../../src/components/layout/TopBar";
+import Navbar from "../../src/components/layout/Navbar";
+import useTheme from "../../src/context/ThemeContext";
 
 const BLUE = "#1A3C6E";
 const WHITE = "#FFFFFF";
@@ -22,16 +24,18 @@ const PRIVACY_TEXT = `We collect only the information needed to provide services
 export default function LegalScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"terms" | "privacy">("terms");
+  const { colors } = useTheme();
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={BLUE} />
-        </Pressable>
-        <Text style={styles.title}>Terms & Privacy</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+      <TopBar
+        location="Lagos, NG"
+        initials="JD"
+        notificationCount={3}
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
+        onAvatarPress={() => router.push("/(tabs)/profile")}
+      />
 
       <View style={styles.tabsRow}>
         <Pressable
@@ -72,20 +76,17 @@ export default function LegalScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.sectionTitle}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
           {activeTab === "terms" ? "Terms of Service" : "Privacy Policy"}
         </Text>
-        <Text style={styles.bodyText}>
-          {activeTab === "terms" ? TERM_TEXT : PRIVACY_TEXT}
-        </Text>
+        <Text style={[styles.bodyText, { color: colors.textSecondary }]}> {activeTab === "terms" ? TERM_TEXT : PRIVACY_TEXT}</Text>
 
-        <View style={styles.sectionCard}>
-          <Text style={styles.cardTitle}>Next steps</Text>
-          <Text style={styles.cardText}>
-            This is a demo version. Real legal text and full integration will be added during the next development phase.
-          </Text>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Next steps</Text>
+          <Text style={[styles.cardText, { color: colors.textSecondary }]}>This is a demo version. Real legal text and full integration will be added during the next development phase.</Text>
         </View>
       </ScrollView>
+      <Navbar />
     </SafeAreaView>
   );
 }

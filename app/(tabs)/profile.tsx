@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/src/components/layout/Navbar";
 import TopBar from "../../src/components/layout/TopBar";
-import  useTheme  from "../../src/context/ThemeContext";
+import useTheme from "../../src/context/ThemeContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -40,14 +40,16 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+      {/* Top navigation bar */}
       <TopBar
-        location="Ibadan, NG"
-        notificationCount={1}
-        initials="OA"
-        onNotificationPress={() => router.push("/profile/notifications")}
+        location="Lagos, NG"
+        notificationCount={3}
+        initials="JD"
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
         onLocationPress={() => router.push("/(tabs)/settings")}
-        onAvatarPress={() => router.push("/profile")}
+        onAvatarPress={() => router.push("/(tabs)/profile")}
       />
+
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -57,7 +59,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <Image source={{ uri: user.avatar }} style={[styles.avatar, { borderColor: colors.panel }]} />
-            <View style={[styles.editBadge, { backgroundColor: colors.accent }]}> 
+            <View style={[styles.editBadge, { backgroundColor: colors.accent }]}>
               <Ionicons name="pencil" size={16} color={colors.panel} />
             </View>
           </View>
@@ -73,7 +75,7 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        <View style={[styles.statsContainer, { backgroundColor: colors.card }]}> 
+        <View style={[styles.statsContainer, { backgroundColor: colors.card }]}>
           <View style={styles.statItem}>
             <Text style={[styles.statNumber, { color: colors.textPrimary }]}>{user.bookings}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Bookings</Text>
@@ -141,7 +143,7 @@ const MenuItem = ({
   colors: ReturnType<typeof useTheme>["colors"];
 }) => (
   <Pressable style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onPress}>
-    <View style={[styles.menuIconContainer, { backgroundColor: colors.surface }]}> 
+    <View style={[styles.menuIconContainer, { backgroundColor: colors.surface }]}>
       <Ionicons name={icon as any} size={24} color={colors.icon} />
     </View>
     <Text style={[styles.menuTitle, { color: colors.textPrimary }]}>{title}</Text>

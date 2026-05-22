@@ -1,6 +1,7 @@
 // app/(tabs)/search.tsx
 // FixGlobal — Search Screen
 // Live search + filter sheet (distance, rating, reviews, price)
+// Full dark-mode support via useTheme — mirrors home.tsx pattern
 
 import React, { useState, useMemo, useRef } from "react";
 import {
@@ -21,16 +22,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
-import useTheme  from "../../src/context/ThemeContext";
+import useTheme from "../../src/context/ThemeContext";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-const BLUE = "#1A3C6E";
+// ─── Static tokens (non-theme) ────────────────────────────────────────────────
 const GOLD = "#FFC300";
 const WHITE = "#FFFFFF";
-const GREY = "#64748B";
-const LIGHT = "#F4F7FD";
+const BLUE = "#1A3C6E";
 
 // ─── Mock fixers data ─────────────────────────────────────────────────────────
 const ALL_FIXERS = [
@@ -137,10 +136,10 @@ const CATEGORIES = [
 
 // ─── Filter state type ────────────────────────────────────────────────────────
 interface Filters {
-  maxDistance: number; // km
+  maxDistance: number;
   minRating: number;
   minReviews: number;
-  maxPrice: number; // naira/hr
+  maxPrice: number;
   sortBy: "rating" | "distance" | "price" | "reviews";
 }
 
@@ -160,25 +159,32 @@ function FixerCard({
   fixer: (typeof ALL_FIXERS)[0];
   onViewProfile: () => void;
 }) {
+  const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
 
   return (
-    <View style={styles.card}>
-      {/* Availability dot */}
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          shadowColor: colors.textPrimary,
+        },
+      ]}
+    >
+      {/* Card top: avatar + tag */}
       <View style={styles.cardTop}>
         <View style={styles.avatarWrap}>
           {!imgError ? (
             <Image
               source={{ uri: fixer.avatar }}
-              style={styles.avatar}
+              style={[styles.avatar, { borderColor: colors.border }]}
               onError={() => setImgError(true)}
             />
           ) : (
             <View
-              style={[
-                styles.avatarFallback,
-                { backgroundColor: fixer.avatarBg },
-              ]}
+              style={[styles.avatarFallback, { backgroundColor: fixer.avatarBg }]}
             >
               <Text style={styles.avatarInitials}>{fixer.initials}</Text>
             </View>
@@ -187,7 +193,10 @@ function FixerCard({
           <View
             style={[
               styles.onlineDot,
-              { backgroundColor: fixer.available ? "#10B981" : "#CBD5E0" },
+              {
+                backgroundColor: fixer.available ? colors.success : colors.muted,
+                borderColor: colors.card,
+              },
             ]}
           />
         </View>
@@ -201,34 +210,51 @@ function FixerCard({
       </View>
 
       {/* Info */}
-      <Text style={styles.fixerName}>{fixer.name}</Text>
-      <Text style={styles.fixerTrade}>{fixer.trade}</Text>
+      <Text style={[styles.fixerName, { color: colors.textPrimary }]}>
+        {fixer.name}
+      </Text>
+      <Text style={[styles.fixerTrade, { color: colors.textSecondary }]}>
+        {fixer.trade}
+      </Text>
 
       {/* Stats row */}
       <View style={styles.statsRow}>
-        <View style={styles.statPill}>
-          <Ionicons name="star" size={12} color={GOLD} />
-          <Text style={styles.statText}>{fixer.rating}</Text>
+        <View style={[styles.statPill, { backgroundColor: colors.cardAlt }]}>
+          <Ionicons name="star" size={12} color={colors.accent} />
+          <Text style={[styles.statText, { color: colors.textSecondary }]}>
+            {fixer.rating}
+          </Text>
         </View>
-        <View style={styles.statPill}>
-          <Ionicons name="chatbubble-outline" size={12} color={GREY} />
-          <Text style={styles.statText}>{fixer.reviews} reviews</Text>
+        <View style={[styles.statPill, { backgroundColor: colors.cardAlt }]}>
+          <Ionicons name="chatbubble-outline" size={12} color={colors.textSecondary} />
+          <Text style={[styles.statText, { color: colors.textSecondary }]}>
+            {fixer.reviews} reviews
+          </Text>
         </View>
-        <View style={styles.statPill}>
-          <Ionicons name="location-outline" size={12} color={GREY} />
-          <Text style={styles.statText}>{fixer.distance} km</Text>
+        <View style={[styles.statPill, { backgroundColor: colors.cardAlt }]}>
+          <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+          <Text style={[styles.statText, { color: colors.textSecondary }]}>
+            {fixer.distance} km
+          </Text>
         </View>
       </View>
 
       {/* Price + CTA */}
-      <View style={styles.cardBottom}>
+      <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
         <View>
-          <Text style={styles.priceLabel}>Starting from</Text>
-          <Text style={styles.price}>{fixer.priceLabel}</Text>
+          <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>
+            Starting from
+          </Text>
+          <Text style={[styles.price, { color: colors.textPrimary }]}>
+            {fixer.priceLabel}
+          </Text>
         </View>
-        <Pressable style={styles.viewBtn} onPress={onViewProfile}>
-          <Text style={styles.viewBtnText}>View Profile</Text>
-          <Ionicons name="arrow-forward" size={14} color={WHITE} />
+        <Pressable
+          style={[styles.viewBtn, { backgroundColor: colors.accent }]}
+          onPress={onViewProfile}
+        >
+          <Text style={[styles.viewBtnText, { color: colors.card }]}>View Profile</Text>
+          <Ionicons name="arrow-forward" size={14} color={colors.card} />
         </Pressable>
       </View>
     </View>
@@ -247,6 +273,7 @@ function FilterSheet({
   onApply: (f: Filters) => void;
   onClose: () => void;
 }) {
+  const { colors } = useTheme();
   const [local, setLocal] = useState<Filters>(filters);
   const slideAnim = useRef(new Animated.Value(height)).current;
 
@@ -257,7 +284,7 @@ function FilterSheet({
       friction: 8,
       tension: 100,
     }).start();
-  }, [visible]);
+  }, [visible, slideAnim]);
 
   const SORT_OPTIONS: { key: Filters["sortBy"]; label: string }[] = [
     { key: "rating", label: "⭐ Rating" },
@@ -277,29 +304,47 @@ function FilterSheet({
       <Pressable style={styles.backdrop} onPress={onClose} />
 
       <Animated.View
-        style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}
+        style={[
+          styles.sheet,
+          {
+            backgroundColor: colors.panel,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
       >
         {/* Handle */}
-        <View style={styles.sheetHandle} />
-        <Text style={styles.sheetTitle}>Filter & Sort</Text>
+        <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+        <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
+          Filter & Sort
+        </Text>
 
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Sort by */}
-          <Text style={styles.filterLabel}>Sort By</Text>
+          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
+            Sort By
+          </Text>
           <View style={styles.sortRow}>
             {SORT_OPTIONS.map((opt) => (
               <Pressable
                 key={opt.key}
                 style={[
                   styles.sortChip,
-                  local.sortBy === opt.key && styles.sortChipActive,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  local.sortBy === opt.key && {
+                    backgroundColor: colors.icon,
+                    borderColor: colors.icon,
+                  },
                 ]}
                 onPress={() => setLocal((p) => ({ ...p, sortBy: opt.key }))}
               >
                 <Text
                   style={[
                     styles.sortChipText,
-                    local.sortBy === opt.key && styles.sortChipTextActive,
+                    { color: colors.textSecondary },
+                    local.sortBy === opt.key && { color: colors.panel },
                   ]}
                 >
                   {opt.label}
@@ -309,9 +354,11 @@ function FilterSheet({
           </View>
 
           {/* Max distance */}
-          <Text style={styles.filterLabel}>
+          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
             Max Distance:{" "}
-            <Text style={styles.filterValue}>{local.maxDistance} km</Text>
+            <Text style={[styles.filterValue, { color: colors.accent }]}>
+              {local.maxDistance} km
+            </Text>
           </Text>
           <View style={styles.sliderRow}>
             {[1, 2, 5, 10, 20].map((v) => (
@@ -319,14 +366,22 @@ function FilterSheet({
                 key={v}
                 style={[
                   styles.sliderChip,
-                  local.maxDistance === v && styles.sliderChipActive,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  local.maxDistance === v && {
+                    backgroundColor: colors.accent,
+                    borderColor: colors.accent,
+                  },
                 ]}
                 onPress={() => setLocal((p) => ({ ...p, maxDistance: v }))}
               >
                 <Text
                   style={[
                     styles.sliderChipText,
-                    local.maxDistance === v && styles.sliderChipTextActive,
+                    { color: colors.textSecondary },
+                    local.maxDistance === v && { color: colors.panel },
                   ]}
                 >
                   {v} km
@@ -336,9 +391,9 @@ function FilterSheet({
           </View>
 
           {/* Min rating */}
-          <Text style={styles.filterLabel}>
+          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
             Min Rating:{" "}
-            <Text style={styles.filterValue}>
+            <Text style={[styles.filterValue, { color: colors.accent }]}>
               {local.minRating === 0 ? "Any" : `${local.minRating}+`}
             </Text>
           </Text>
@@ -348,14 +403,22 @@ function FilterSheet({
                 key={v}
                 style={[
                   styles.sliderChip,
-                  local.minRating === v && styles.sliderChipActive,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  local.minRating === v && {
+                    backgroundColor: colors.accent,
+                    borderColor: colors.accent,
+                  },
                 ]}
                 onPress={() => setLocal((p) => ({ ...p, minRating: v }))}
               >
                 <Text
                   style={[
                     styles.sliderChipText,
-                    local.minRating === v && styles.sliderChipTextActive,
+                    { color: colors.textSecondary },
+                    local.minRating === v && { color: colors.panel },
                   ]}
                 >
                   {v === 0 ? "Any" : `${v}+`}
@@ -365,9 +428,9 @@ function FilterSheet({
           </View>
 
           {/* Min reviews */}
-          <Text style={styles.filterLabel}>
+          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
             Min Reviews:{" "}
-            <Text style={styles.filterValue}>
+            <Text style={[styles.filterValue, { color: colors.accent }]}>
               {local.minReviews === 0 ? "Any" : `${local.minReviews}+`}
             </Text>
           </Text>
@@ -377,14 +440,22 @@ function FilterSheet({
                 key={v}
                 style={[
                   styles.sliderChip,
-                  local.minReviews === v && styles.sliderChipActive,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  local.minReviews === v && {
+                    backgroundColor: colors.accent,
+                    borderColor: colors.accent,
+                  },
                 ]}
                 onPress={() => setLocal((p) => ({ ...p, minReviews: v }))}
               >
                 <Text
                   style={[
                     styles.sliderChipText,
-                    local.minReviews === v && styles.sliderChipTextActive,
+                    { color: colors.textSecondary },
+                    local.minReviews === v && { color: colors.panel },
                   ]}
                 >
                   {v === 0 ? "Any" : `${v}+`}
@@ -394,9 +465,9 @@ function FilterSheet({
           </View>
 
           {/* Max price */}
-          <Text style={styles.filterLabel}>
+          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
             Max Price:{" "}
-            <Text style={styles.filterValue}>
+            <Text style={[styles.filterValue, { color: colors.accent }]}>
               {local.maxPrice >= 10000
                 ? "Any"
                 : `₦${local.maxPrice.toLocaleString()}/hr`}
@@ -408,14 +479,22 @@ function FilterSheet({
                 key={v}
                 style={[
                   styles.sliderChip,
-                  local.maxPrice === v && styles.sliderChipActive,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                  local.maxPrice === v && {
+                    backgroundColor: colors.accent,
+                    borderColor: colors.accent,
+                  },
                 ]}
                 onPress={() => setLocal((p) => ({ ...p, maxPrice: v }))}
               >
                 <Text
                   style={[
                     styles.sliderChipText,
-                    local.maxPrice === v && styles.sliderChipTextActive,
+                    { color: colors.textSecondary },
+                    local.maxPrice === v && { color: colors.panel },
                   ]}
                 >
                   {v >= 10000
@@ -430,19 +509,26 @@ function FilterSheet({
         {/* Action buttons */}
         <View style={styles.sheetActions}>
           <Pressable
-            style={styles.resetBtn}
+            style={[
+              styles.resetBtn,
+              { borderColor: colors.border, backgroundColor: colors.panel },
+            ]}
             onPress={() => setLocal(DEFAULT_FILTERS)}
           >
-            <Text style={styles.resetBtnText}>Reset</Text>
+            <Text style={[styles.resetBtnText, { color: colors.textPrimary }]}>
+              Reset
+            </Text>
           </Pressable>
           <Pressable
-            style={styles.applyBtn}
+            style={[styles.applyBtn, { backgroundColor: colors.accent }]}
             onPress={() => {
               onApply(local);
               onClose();
             }}
           >
-            <Text style={styles.applyBtnText}>Apply Filters</Text>
+            <Text style={[styles.applyBtnText, { color: colors.card }]}>
+              Apply Filters
+            </Text>
           </Pressable>
         </View>
       </Animated.View>
@@ -452,7 +538,6 @@ function FilterSheet({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SearchScreen() {
-
   const router = useRouter();
   const { colors } = useTheme();
 
@@ -475,78 +560,82 @@ export default function SearchScreen() {
   // Filter + search logic
   const results = useMemo(() => {
     let list = [...ALL_FIXERS];
-
-    // Text search
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
         (f) =>
           f.name.toLowerCase().includes(q) ||
           f.trade.toLowerCase().includes(q) ||
-          f.category.toLowerCase().includes(q),
+          f.category.toLowerCase().includes(q)
       );
     }
-
-    // Category filter
     if (activeCategory !== "all") {
       list = list.filter((f) => f.category === activeCategory);
     }
-
-    // Distance
     list = list.filter((f) => f.distance <= filters.maxDistance);
-    // Rating
     list = list.filter((f) => f.rating >= filters.minRating);
-    // Reviews
     list = list.filter((f) => f.reviews >= filters.minReviews);
-    // Price
     list = list.filter((f) => f.price <= filters.maxPrice);
-
-    // Sort
     list.sort((a, b) => {
       switch (filters.sortBy) {
-        case "distance":
-          return a.distance - b.distance;
-        case "price":
-          return a.price - b.price;
-        case "reviews":
-          return b.reviews - a.reviews;
-        case "rating":
-        default:
-          return b.rating - a.rating;
+        case "distance": return a.distance - b.distance;
+        case "price": return a.price - b.price;
+        case "reviews": return b.reviews - a.reviews;
+        default: return b.rating - a.rating;
       }
     });
-
     return list;
   }, [query, activeCategory, filters]);
 
   return (
     <SafeAreaView
-          style={[styles.root, { backgroundColor: colors.background }]}
-          edges={["top"]}
-        >  <TopBar
+      style={[styles.root, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
+
+      {/* Top navigation bar */}
+      <TopBar
         location="Lagos, NG"
         notificationCount={3}
         initials="JD"
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
 
       {/* ── Search bar + filter button ─────────────────────────────── */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={18} color={GREY} />
+      <View
+        style={[
+          styles.searchRow,
+          {
+            backgroundColor: colors.panel,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.searchBox,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             value={query}
             onChangeText={setQuery}
             placeholder="Search fixers, services..."
-            placeholderTextColor="#A0AEC0"
+            placeholderTextColor={colors.muted}
             autoCorrect={false}
             autoCapitalize="none"
             clearButtonMode="while-editing"
           />
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#A0AEC0" />
+              <Ionicons name="close-circle" size={18} color={colors.muted} />
             </Pressable>
           )}
         </View>
@@ -555,18 +644,27 @@ export default function SearchScreen() {
         <Pressable
           style={[
             styles.filterBtn,
-            activeFilterCount > 0 && styles.filterBtnActive,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+            activeFilterCount > 0 && {
+              backgroundColor: colors.icon,
+              borderColor: colors.icon,
+            },
           ]}
           onPress={() => setShowFilters(true)}
         >
           <Ionicons
             name="options-outline"
             size={20}
-            color={activeFilterCount > 0 ? WHITE : BLUE}
+            color={activeFilterCount > 0 ? colors.panel : colors.icon}
           />
           {activeFilterCount > 0 && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+            <View style={[styles.filterBadge, { borderColor: colors.panel }]}>
+              <Text style={[styles.filterBadgeText, { color: colors.panel }]}>
+                {activeFilterCount}
+              </Text>
             </View>
           )}
         </Pressable>
@@ -576,7 +674,13 @@ export default function SearchScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.categoryScrollOuter}
+        style={[
+          styles.categoryScrollOuter,
+          {
+            backgroundColor: colors.panel,
+            borderBottomColor: colors.border,
+          },
+        ]}
         contentContainerStyle={styles.categoryScroll}
       >
         {CATEGORIES.map((cat) => (
@@ -584,19 +688,27 @@ export default function SearchScreen() {
             key={cat.id}
             style={[
               styles.categoryChip,
-              activeCategory === cat.id && styles.categoryChipActive,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+              activeCategory === cat.id && {
+                backgroundColor: colors.icon,
+                borderColor: colors.icon,
+              },
             ]}
             onPress={() => setActiveCategory(cat.id)}
           >
             <Ionicons
               name={cat.icon as any}
               size={14}
-              color={activeCategory === cat.id ? WHITE : GREY}
+              color={activeCategory === cat.id ? colors.panel : colors.textSecondary}
             />
             <Text
               style={[
                 styles.categoryChipText,
-                activeCategory === cat.id && styles.categoryChipTextActive,
+                { color: colors.textSecondary },
+                activeCategory === cat.id && { color: colors.panel },
               ]}
             >
               {cat.label}
@@ -607,12 +719,14 @@ export default function SearchScreen() {
 
       {/* ── Results count ──────────────────────────────────────────── */}
       <View style={styles.resultsHeader}>
-        <Text style={styles.resultsCount}>
+        <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
           {results.length} fixer{results.length !== 1 ? "s" : ""} found
         </Text>
         {activeFilterCount > 0 && (
           <Pressable onPress={() => setFilters(DEFAULT_FILTERS)}>
-            <Text style={styles.clearFilters}>Clear filters</Text>
+            <Text style={[styles.clearFilters, { color: colors.accent }]}>
+              Clear filters
+            </Text>
           </Pressable>
         )}
       </View>
@@ -620,20 +734,24 @@ export default function SearchScreen() {
       {/* ── Fixer list ─────────────────────────────────────────────── */}
       {results.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="search-outline" size={52} color="#CBD5E0" />
-          <Text style={styles.emptyTitle}>No fixers found</Text>
-          <Text style={styles.emptyDesc}>
+          <Ionicons name="search-outline" size={52} color={colors.border} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            No fixers found
+          </Text>
+          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
             Try adjusting your search or filters
           </Text>
           <Pressable
-            style={styles.emptyBtn}
+            style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
             onPress={() => {
               setQuery("");
               setFilters(DEFAULT_FILTERS);
               setActiveCategory("all");
             }}
           >
-            <Text style={styles.emptyBtnText}>Reset Search</Text>
+            <Text style={[styles.emptyBtnText, { color: colors.card }]}>
+              Reset Search
+            </Text>
           </Pressable>
         </View>
       ) : (
@@ -666,9 +784,9 @@ export default function SearchScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles (layout/spacing only — colours applied inline) ───────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: LIGHT },
+  root: { flex: 1 },
 
   // ── Search row ──
   searchRow: {
@@ -676,41 +794,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     gap: 10,
-    backgroundColor: WHITE,
     borderBottomWidth: 1,
-    borderBottomColor: "#EAF0FB",
   },
   searchBox: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: LIGHT,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
     borderWidth: 1,
-    borderColor: "#DDE4F0",
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: BLUE,
     fontWeight: "500",
   },
   filterBtn: {
     width: 46,
     height: 46,
     borderRadius: 12,
-    backgroundColor: LIGHT,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "#DDE4F0",
-  },
-  filterBtnActive: {
-    backgroundColor: BLUE,
-    borderColor: BLUE,
   },
   filterBadge: {
     position: "absolute",
@@ -723,22 +830,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: WHITE,
   },
-  filterBadgeText: { fontSize: 9, fontWeight: "900", color: BLUE },
+  filterBadgeText: { fontSize: 9, fontWeight: "900" },
 
   // ── Category chips ──
   categoryScrollOuter: {
-    backgroundColor: WHITE,
     borderBottomWidth: 1,
-    borderBottomColor: "#EAF0FB",
-    flexGrow: 0, // prevents it from expanding and eating layout space
+    flexGrow: 0,
   },
   categoryScroll: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
-    alignItems: "center", // vertically center chips
+    alignItems: "center",
   },
   categoryChip: {
     flexDirection: "row",
@@ -747,16 +851,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: LIGHT,
     borderWidth: 1,
-    borderColor: "#DDE4F0",
   },
-  categoryChipActive: {
-    backgroundColor: BLUE,
-    borderColor: BLUE,
-  },
-  categoryChipText: { fontSize: 12, fontWeight: "700", color: GREY },
-  categoryChipTextActive: { color: WHITE },
+  categoryChipText: { fontSize: 12, fontWeight: "700" },
 
   // ── Results header ──
   resultsHeader: {
@@ -767,24 +864,21 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  resultsCount: { fontSize: 13, fontWeight: "700", color: GREY },
-  clearFilters: { fontSize: 13, fontWeight: "700", color: GOLD },
+  resultsCount: { fontSize: 13, fontWeight: "700" },
+  clearFilters: { fontSize: 13, fontWeight: "700" },
 
   // ── List ──
   list: { paddingHorizontal: 20, paddingBottom: 24, gap: 14 },
 
   // ── Fixer card ──
   card: {
-    backgroundColor: WHITE,
     borderRadius: 20,
     padding: 16,
-    shadowColor: BLUE,
     shadowOpacity: 0.07,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
     borderWidth: 1,
-    borderColor: "#EAF0FB",
   },
   cardTop: {
     flexDirection: "row",
@@ -798,7 +892,6 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     borderWidth: 2,
-    borderColor: "#EAF0FB",
   },
   avatarFallback: {
     width: 64,
@@ -816,7 +909,6 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: WHITE,
   },
   tag: {
     paddingVertical: 4,
@@ -828,13 +920,11 @@ const styles = StyleSheet.create({
   fixerName: {
     fontSize: 16,
     fontWeight: "800",
-    color: BLUE,
     marginBottom: 3,
     letterSpacing: -0.3,
   },
   fixerTrade: {
     fontSize: 13,
-    color: GREY,
     fontWeight: "500",
     marginBottom: 12,
   },
@@ -849,12 +939,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: LIGHT,
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 8,
   },
-  statText: { fontSize: 12, fontWeight: "600", color: GREY },
+  statText: { fontSize: 12, fontWeight: "600" },
 
   cardBottom: {
     flexDirection: "row",
@@ -862,20 +951,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#EAF0FB",
   },
-  priceLabel: { fontSize: 10, color: GREY, fontWeight: "500", marginBottom: 2 },
-  price: { fontSize: 16, fontWeight: "900", color: BLUE },
+  priceLabel: { fontSize: 10, fontWeight: "500", marginBottom: 2 },
+  price: { fontSize: 16, fontWeight: "900" },
   viewBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: BLUE,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
   },
-  viewBtnText: { fontSize: 13, fontWeight: "800", color: WHITE },
+  viewBtnText: { fontSize: 13, fontWeight: "800" },
 
   // ── Empty state ──
   emptyState: {
@@ -885,16 +972,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     gap: 10,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: BLUE },
-  emptyDesc: { fontSize: 14, color: GREY, textAlign: "center", lineHeight: 21 },
+  emptyTitle: { fontSize: 18, fontWeight: "800" },
+  emptyDesc: { fontSize: 14, textAlign: "center", lineHeight: 21 },
   emptyBtn: {
     marginTop: 8,
-    backgroundColor: GOLD,
     paddingVertical: 11,
     paddingHorizontal: 24,
     borderRadius: 12,
   },
-  emptyBtnText: { fontSize: 14, fontWeight: "800", color: BLUE },
+  emptyBtnText: { fontSize: 14, fontWeight: "800" },
 
   // ── Filter sheet ──
   backdrop: {
@@ -910,7 +996,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: WHITE,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
@@ -926,39 +1011,32 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#DDE4F0",
     alignSelf: "center",
     marginBottom: 20,
   },
   sheetTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: BLUE,
     marginBottom: 20,
     letterSpacing: -0.4,
   },
   filterLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: GREY,
     marginBottom: 10,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  filterValue: { color: BLUE, fontWeight: "800", textTransform: "none" },
+  filterValue: { fontWeight: "800", textTransform: "none" },
 
   sortRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
   sortChip: {
     paddingVertical: 7,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: LIGHT,
     borderWidth: 1,
-    borderColor: "#DDE4F0",
   },
-  sortChipActive: { backgroundColor: BLUE, borderColor: BLUE },
-  sortChipText: { fontSize: 13, fontWeight: "700", color: GREY },
-  sortChipTextActive: { color: WHITE },
+  sortChipText: { fontSize: 13, fontWeight: "700" },
 
   sliderRow: {
     flexDirection: "row",
@@ -970,13 +1048,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: LIGHT,
     borderWidth: 1,
-    borderColor: "#DDE4F0",
   },
-  sliderChipActive: { backgroundColor: GOLD, borderColor: GOLD },
-  sliderChipText: { fontSize: 13, fontWeight: "700", color: GREY },
-  sliderChipTextActive: { color: BLUE },
+  sliderChipText: { fontSize: 13, fontWeight: "700" },
 
   sheetActions: {
     flexDirection: "row",
@@ -988,23 +1062,20 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: BLUE,
     alignItems: "center",
     justifyContent: "center",
   },
-  resetBtnText: { fontSize: 15, fontWeight: "700", color: BLUE },
+  resetBtnText: { fontSize: 15, fontWeight: "700" },
   applyBtn: {
     flex: 2,
     height: 50,
     borderRadius: 14,
-    backgroundColor: GOLD,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: GOLD,
     shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 5,
   },
-  applyBtnText: { fontSize: 15, fontWeight: "800", color: BLUE },
+  applyBtnText: { fontSize: 15, fontWeight: "800" },
 });

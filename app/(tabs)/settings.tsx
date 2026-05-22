@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import Navbar from "@/src/components/layout/Navbar";
 import TopBar from "../../src/components/layout/TopBar";
 
-import useTheme  from "../../src/context/ThemeContext";
+import useTheme from "../../src/context/ThemeContext";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -38,11 +38,12 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+      {/* Top navigation bar */}
       <TopBar
-        location="Ibadan, NG"
+        location="Lagos, NG"
         notificationCount={3}
-        initials="OA"
-        onNotificationPress={() => router.push("/profile/notifications")}
+        initials="JD"
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
@@ -54,7 +55,7 @@ export default function SettingsScreen() {
         <Text style={[styles.heading, { color: colors.textPrimary }]}>App Settings</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Core settings for user experience, security, and booking preferences.</Text>
 
-        <View style={[styles.section, { backgroundColor: colors.panel, borderColor: colors.border }]}> 
+        <View style={[styles.section, { backgroundColor: colors.panel, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Security</Text>
           <SettingRow
             label="Keep me logged in"
@@ -70,7 +71,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={[styles.section, { backgroundColor: colors.panel, borderColor: colors.border }]}> 
+        <View style={[styles.section, { backgroundColor: colors.panel, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Preferences</Text>
           <SettingRow
             label="Dark mode"
@@ -98,7 +99,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={[styles.section, { backgroundColor: colors.panel, borderColor: colors.border }]}> 
+        <View style={[styles.section, { backgroundColor: colors.panel, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>About app</Text>
           <TouchableAction
             title="App version"
@@ -134,7 +135,7 @@ function SettingRow({
   colors: ReturnType<typeof useTheme>['colors'];
 }) {
   return (
-    <View style={[styles.row, { borderBottomColor: colors.border }]}> 
+    <View style={[styles.row, { borderBottomColor: colors.border }]}>
       <View>
         <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{label}</Text>
       </View>

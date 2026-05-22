@@ -9,10 +9,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Path } from "react-native-svg";
-
+import TopBar from "../../src/components/layout/TopBar";
+import Navbar from "../../src/components/layout/Navbar";
+import useTheme from "../../src/context/ThemeContext";
 const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
 const WHITE = "#FFFFFF";
 const LIGHT = "#F4F7FD";
 const GREY = "#64748B";
@@ -48,24 +48,26 @@ const FAQ_ITEMS = [
 export default function HelpSupportScreen() {
   const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>("1");
+  const { colors } = useTheme();
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={BLUE} />
-        </Pressable>
-        <Text style={styles.title}>Help & Support</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+      <TopBar
+        location="Lagos, NG"
+        notificationCount={3}
+        initials="JD"
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onLocationPress={() => router.push("/(tabs)/settings")}
+        onAvatarPress={() => router.push("/(tabs)/profile")}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.subtitle}>
-          Need help? Find quick answers here or start a chat with our support team.
-        </Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Need help? Find quick answers here or start a chat with our support team.</Text>
+
+        <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Help & Support</Text>
 
         {FAQ_ITEMS.map((item) => {
           const expanded = item.id === activeId;
@@ -80,29 +82,30 @@ export default function HelpSupportScreen() {
                 }
               >
                 <View style={styles.questionTextBlock}>
-                  <Text style={styles.question}>{item.question}</Text>
+                  <Text style={[styles.question, { color: colors.textPrimary }]}>{item.question}</Text>
                 </View>
                 <Ionicons
                   name={expanded ? "chevron-up" : "chevron-down"}
                   size={20}
-                  color={BLUE}
+                  color={colors.icon}
                 />
               </Pressable>
               {expanded ? (
-                <Text style={styles.answer}>{item.answer}</Text>
+                <Text style={[styles.answer, { color: colors.textSecondary }]}>{item.answer}</Text>
               ) : null}
             </View>
           );
         })}
 
         <Pressable
-          style={styles.chatButton}
+          style={[styles.chatButton, { backgroundColor: colors.accent }]}
           onPress={() => router.push("/profile/live_chat")}
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={20} color={WHITE} />
-          <Text style={styles.chatButtonText}>Chat with Us</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.panel} />
+          <Text style={[styles.chatButtonText, { color: colors.panel }]}>Chat with Us</Text>
         </Pressable>
       </ScrollView>
+      <Navbar />
     </SafeAreaView>
   );
 }

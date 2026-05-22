@@ -15,12 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "@/src/components/layout/Navbar";
-import useTheme  from "../../src/context/ThemeContext";
-
-const BLUE = "#1A3C6E";
-const GOLD = "#FFC300";
-const WHITE = "#FFFFFF";
-const GREY = "#64748B";
+import useTheme from "../../src/context/ThemeContext";
 
 interface Transaction {
   id: string;
@@ -61,6 +56,7 @@ const TRANSACTIONS: Transaction[] = [
 ];
 
 export default function WalletScreen() {
+
   const router = useRouter();
   const { colors } = useTheme();
   const [balance] = useState(12450);
@@ -80,11 +76,12 @@ export default function WalletScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
+      {/* Top navigation bar */}
       <TopBar
         location="Lagos, NG"
-        notificationCount={2}
+        notificationCount={3}
         initials="JD"
-        onNotificationPress={() => router.push("/profile/notifications")}
+        onNotificationPress={() => router.push("/(tabs)/notifications")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
@@ -97,30 +94,30 @@ export default function WalletScreen() {
         contentContainerStyle={styles.scroll}
       >
         {/* Balance Card */}
-        <View style={styles.balanceCard}>
+        <View style={[styles.balanceCard, { backgroundColor: colors.cardAlt, shadowColor: colors.border }]}>
           <View style={styles.balanceHeader}>
-            <Text style={styles.balanceLabel}>Available Balance</Text>
+            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Available Balance</Text>
             <Pressable onPress={toggleBalanceVisibility} hitSlop={10}>
               <Ionicons
                 name={isBalanceVisible ? "eye-outline" : "eye-off-outline"}
                 size={24}
-                color="#ffffff90"
+                color={colors.muted}
               />
             </Pressable>
           </View>
 
-          <Text style={styles.balanceAmount}>
+          <Text style={[styles.balanceAmount, { color: colors.textPrimary }]}>
             {isBalanceVisible ? formatNaira(balance) : "••••••"}
           </Text>
 
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <Text style={styles.statLabel}>Total Spent</Text>
-              <Text style={styles.statValue}>₦67,800</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Spent</Text>
+              <Text style={[styles.statValue, { color: colors.textPrimary }]}>₦67,800</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statLabel}>Total Refunded</Text>
-              <Text style={styles.statValue}>₦12,000</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Refunded</Text>
+              <Text style={[styles.statValue, { color: colors.textPrimary }]}>₦12,000</Text>
             </View>
           </View>
         </View>
@@ -128,45 +125,45 @@ export default function WalletScreen() {
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
           <Pressable
-            style={styles.actionBtn}
+            style={[styles.actionBtn, { backgroundColor: colors.card, shadowColor: colors.border }]}
             onPress={() => alert("Deposit Modal Coming Soon")}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="add-circle" size={28} color={BLUE} />
+            <View style={[styles.actionIcon, { backgroundColor: colors.surface }]}>
+              <Ionicons name="add-circle" size={28} color={colors.accent} />
             </View>
-            <Text style={styles.actionText}>Deposit</Text>
+            <Text style={[styles.actionText, { color: colors.textPrimary }]}>Deposit</Text>
           </Pressable>
 
           <Pressable
-            style={styles.actionBtn}
+            style={[styles.actionBtn, { backgroundColor: colors.card, shadowColor: colors.border }]}
             onPress={() => alert("Withdraw Modal Coming Soon")}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="cash-outline" size={28} color={BLUE} />
+            <View style={[styles.actionIcon, { backgroundColor: colors.surface }]}>
+              <Ionicons name="cash-outline" size={28} color={colors.accent} />
             </View>
-            <Text style={styles.actionText}>Withdraw</Text>
+            <Text style={[styles.actionText, { color: colors.textPrimary }]}>Withdraw</Text>
           </Pressable>
 
           <Pressable
-            style={styles.actionBtn}
+            style={[styles.actionBtn, { backgroundColor: colors.card, shadowColor: colors.border }]}
             onPress={() => alert("Send Money")}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="send" size={28} color={BLUE} />
+            <View style={[styles.actionIcon, { backgroundColor: colors.surface }]}>
+              <Ionicons name="send" size={28} color={colors.accent} />
             </View>
-            <Text style={styles.actionText}>Send</Text>
+            <Text style={[styles.actionText, { color: colors.textPrimary }]}>Send</Text>
           </Pressable>
         </View>
 
         {/* Repair Credit */}
-        <View style={styles.repairCreditCard}>
+        <View style={[styles.repairCreditCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.repairCreditContent}>
             <View>
-              <Text style={styles.repairCreditTitle}>Repair Credit</Text>
-              <Text style={styles.repairCreditSubtitle}>₦2,000 available</Text>
+              <Text style={[styles.repairCreditTitle, { color: colors.textPrimary }]}>Repair Credit</Text>
+              <Text style={[styles.repairCreditSubtitle, { color: colors.textSecondary }]}>₦2,000 available</Text>
             </View>
-            <Pressable style={styles.useNowBtn}>
-              <Text style={styles.useNowText}>Use Now</Text>
+            <Pressable style={[styles.useNowBtn, { backgroundColor: colors.accent }]}>
+              <Text style={[styles.useNowText, { color: colors.card }]}>Use Now</Text>
             </Pressable>
           </View>
         </View>
@@ -174,9 +171,10 @@ export default function WalletScreen() {
         {/* Recent Transactions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <Pressable onPress={() => router.push("/(tabs)/transactions")}>
-              <Text style={styles.seeAll}>See all →</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Transactions</Text>
+            <Pressable onPress={() => router.push("/(tabs)/search")}
+            >
+              <Text style={[styles.seeAll, { color: colors.accent }]}>See all →</Text>
             </Pressable>
           </View>
 
@@ -186,8 +184,8 @@ export default function WalletScreen() {
             scrollEnabled={false}
             contentContainerStyle={{ gap: 12 }}
             renderItem={({ item }) => (
-              <View style={styles.transactionRow}>
-                <View style={styles.transactionIconContainer}>
+              <View style={[styles.transactionRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.transactionIconContainer, { backgroundColor: colors.surface }]}>
                   <Ionicons
                     name={
                       item.type === "credit"
@@ -195,31 +193,31 @@ export default function WalletScreen() {
                         : "arrow-up-circle"
                     }
                     size={26}
-                    color={item.type === "credit" ? "#10B981" : "#EF4444"}
+                    color={item.type === "credit" ? colors.success : colors.danger}
                   />
                 </View>
 
                 <View style={styles.transactionInfo}>
-                  <Text style={styles.transactionDesc}>{item.description}</Text>
+                  <Text style={[styles.transactionDesc, { color: colors.textPrimary }]}>{item.description}</Text>
                   {item.service && (
-                    <Text style={styles.transactionService}>
+                    <Text style={[styles.transactionService, { color: colors.textSecondary }]}>
                       {item.service}
                     </Text>
                   )}
-                  <Text style={styles.transactionDate}>{item.date}</Text>
+                  <Text style={[styles.transactionDate, { color: colors.muted }]}>{item.date}</Text>
                 </View>
 
                 <View style={styles.transactionAmountContainer}>
                   <Text
                     style={[
                       styles.transactionAmount,
-                      { color: item.type === "credit" ? "#10B981" : "#EF4444" },
+                      { color: item.type === "credit" ? colors.success : colors.danger },
                     ]}
                   >
                     {item.type === "credit" ? "+" : "-"}
                     {formatNaira(item.amount)}
                   </Text>
-                  <Text style={styles.transactionStatus}>{item.status}</Text>
+                  <Text style={[styles.transactionStatus, { color: colors.success }]}>{item.status}</Text>
                 </View>
               </View>
             )}
@@ -236,16 +234,15 @@ export default function WalletScreen() {
 
 // Styles (same as your current one - no major changes needed)
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F8FAFD" },
+  root: { flex: 1 },
   scroll: { paddingBottom: 24 },
 
   balanceCard: {
     marginHorizontal: 20,
     marginTop: 16,
-    backgroundColor: BLUE,
     borderRadius: 24,
     padding: 24,
-    shadowColor: BLUE,
+    shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -257,14 +254,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   balanceLabel: {
-    color: "#ffffff90",
     fontSize: 14,
     fontWeight: "600",
   },
   balanceAmount: {
     fontSize: 36,
     fontWeight: "900",
-    color: WHITE,
     marginVertical: 12,
     letterSpacing: -1,
     minHeight: 45, // Prevents layout shift when toggling
@@ -277,13 +272,11 @@ const styles = StyleSheet.create({
   stat: {},
   statLabel: {
     fontSize: 12,
-    color: "#ffffff90",
     fontWeight: "500",
   },
   statValue: {
     fontSize: 15,
     fontWeight: "700",
-    color: WHITE,
     marginTop: 2,
   },
 
@@ -295,12 +288,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   actionBtn: {
-    backgroundColor: WHITE,
     alignItems: "center",
     paddingVertical: 14,
     width: "30%",
     borderRadius: 16,
-    shadowColor: BLUE,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -310,7 +301,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#EEF4FD",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 6,
@@ -318,16 +308,13 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 13,
     fontWeight: "700",
-    color: BLUE,
   },
 
   repairCreditCard: {
     marginHorizontal: 20,
-    backgroundColor: WHITE,
     borderRadius: 18,
     padding: 18,
     borderWidth: 1,
-    borderColor: "#EAF0FB",
   },
   repairCreditContent: {
     flexDirection: "row",
@@ -337,22 +324,18 @@ const styles = StyleSheet.create({
   repairCreditTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: BLUE,
   },
   repairCreditSubtitle: {
     fontSize: 13,
-    color: GREY,
     marginTop: 2,
   },
   useNowBtn: {
-    backgroundColor: GOLD,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 12,
   },
   useNowText: {
     fontWeight: "800",
-    color: BLUE,
     fontSize: 13,
   },
 
@@ -366,27 +349,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: BLUE,
   },
   seeAll: {
     fontSize: 13,
     fontWeight: "700",
-    color: GOLD,
   },
 
   transactionRow: {
     flexDirection: "row",
-    backgroundColor: WHITE,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#EAF0FB",
   },
   transactionIconContainer: {
     width: 46,
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#F8FAFD",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -394,16 +372,13 @@ const styles = StyleSheet.create({
   transactionDesc: {
     fontSize: 14,
     fontWeight: "700",
-    color: BLUE,
   },
   transactionService: {
     fontSize: 12,
-    color: GREY,
     marginTop: 2,
   },
   transactionDate: {
     fontSize: 12,
-    color: "#94A3B8",
     marginTop: 4,
   },
   transactionAmountContainer: {
@@ -415,7 +390,6 @@ const styles = StyleSheet.create({
   },
   transactionStatus: {
     fontSize: 11,
-    color: "#10B981",
     fontWeight: "600",
     marginTop: 4,
   },
