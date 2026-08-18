@@ -1,46 +1,22 @@
-// ─── app/(auth)/forgot-password.tsx ──────────────────────────────────────────
-// FixGlobal — Forgot Password Screen
-// Same visual DNA: white bg, blue/gold blobs, gold CTA
-// Flow: enter email → simulated send → redirect to (tabs)/home
-
-import React, { useState, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  StatusBar,
   ActivityIndicator,
   Animated,
-  Dimensions,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Path, Circle, Polyline } from "react-native-svg";
+import Svg, { Circle, Path, Polyline } from "react-native-svg";
+import useTheme from "@/src/context/ThemeContext";
+import { forgotPassword } from "@/src/features/auth/api";
 
-const { width } = Dimensions.get("window");
-
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const BLUE = "#1A3C6E";
-const GOLD = "#ffc300";
-const WHITE = "#FFFFFF";
-const LIGHT = "#F4F7FD";
-const BORDER = "#DDE4F0";
-const PLACEHOLDER = "#8FA0B8";
-const ERROR = "#E84040";
-const LABEL = "#3A4E6A";
-const SUCCESS = "#1A9E6A";
-
-// ─── Mail SVG icon ────────────────────────────────────────────────────────────
-function MailIcon({
-  color = BLUE,
-  size = 48,
-}: {
-  color?: string;
-  size?: number;
-}) {
+function MailIcon({ color, size = 40 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -61,14 +37,13 @@ function MailIcon({
   );
 }
 
-// ─── Check circle icon ────────────────────────────────────────────────────────
-function CheckIcon({ size = 64 }: { size?: number }) {
+function CheckIcon({ color, size = 64 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={10} stroke={SUCCESS} strokeWidth={1.8} />
+      <Circle cx={12} cy={12} r={10} stroke={color} strokeWidth={1.8} />
       <Path
         d="M8 12l3 3 5-5"
-        stroke={SUCCESS}
+        stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -77,33 +52,178 @@ function CheckIcon({ size = 64 }: { size?: number }) {
   );
 }
 
-// ─── Decorative blobs ─────────────────────────────────────────────────────────
-function HeaderBlob() {
-  return (
-    <View style={styles.blobContainer} pointerEvents="none">
-      {/* Green-tinted blob this time — unique per screen */}
-      <View style={styles.blobA} />
-      <View style={styles.blobB} />
-      <View style={styles.blobC} />
-    </View>
-  );
-}
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
-  // Success card fade-in
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.92)).current;
-
-  // Animated border on email field
   const borderAnim = useRef(new Animated.Value(0)).current;
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 22 },
+        scroll: { flexGrow: 1 },
+        brandRow: { flexDirection: "row", alignItems: "center", marginTop: 52, marginBottom: 18 },
+        logoFix: { fontSize: 22, fontWeight: "900", color: colors.textPrimary, letterSpacing: -0.4 },
+        logoGlobal: { fontSize: 22, fontWeight: "900", color: colors.accent, letterSpacing: -0.4 },
+        backBtn: {
+          flexDirection: "row",
+          alignItems: "center",
+          alignSelf: "flex-start",
+          paddingVertical: 4,
+          marginBottom: 20,
+        },
+        backText: { fontSize: 14, fontWeight: "600", color: colors.accent, marginLeft: 2 },
+        headBlock: { marginBottom: 24 },
+        headline: { fontSize: 34, fontWeight: "900", color: colors.textPrimary, lineHeight: 40, marginBottom: 8 },
+        subline: { fontSize: 15, color: colors.textSecondary, fontWeight: "500", lineHeight: 22 },
+        card: {
+          backgroundColor: colors.panel,
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: colors.border,
+          paddingHorizontal: 20,
+          paddingTop: 22,
+          paddingBottom: 22,
+          shadowColor: colors.textPrimary,
+          shadowOpacity: 0.08,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 6,
+        },
+        iconArea: { alignItems: "center", marginBottom: 20 },
+        iconRing: {
+          width: 92,
+          height: 92,
+          borderRadius: 46,
+          backgroundColor: colors.cardAlt,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        fieldLabel: {
+          fontSize: 12,
+          fontWeight: "700",
+          color: colors.textSecondary,
+          marginBottom: 7,
+          letterSpacing: 0.3,
+          textTransform: "uppercase",
+        },
+        inputShell: {
+          flexDirection: "row",
+          alignItems: "center",
+          borderWidth: 1.5,
+          borderRadius: 12,
+          backgroundColor: colors.surface,
+          minHeight: 52,
+          paddingHorizontal: 14,
+        },
+        input: {
+          flex: 1,
+          minHeight: 52,
+          fontSize: 15,
+          color: colors.textPrimary,
+          fontWeight: "600",
+          paddingVertical: 14,
+        },
+        errorText: {
+          color: colors.danger,
+          fontSize: 12,
+          fontWeight: "600",
+          marginTop: 8,
+          marginBottom: 2,
+        },
+        hintText: {
+          color: colors.muted,
+          fontSize: 12,
+          fontWeight: "500",
+          marginTop: 8,
+          marginBottom: 2,
+        },
+        primaryButton: {
+          width: "100%",
+          minHeight: 56,
+          paddingHorizontal: 28,
+          paddingVertical: 14,
+          borderRadius: 14,
+          backgroundColor: colors.accent,
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 16,
+          shadowColor: colors.accent,
+          shadowOpacity: 0.24,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 6,
+        },
+        primaryButtonText: {
+          color: colors.card,
+          fontWeight: "800",
+          fontSize: 15,
+          letterSpacing: 0.2,
+        },
+        buttonContent: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+        },
+        footer: {
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingTop: 16,
+        },
+        footerText: { color: colors.textSecondary, fontSize: 14 },
+        footerLink: { color: colors.accent, fontSize: 14, fontWeight: "700", marginLeft: 4 },
+        successBox: { alignItems: "center", paddingTop: 8 },
+        successIconWrap: {
+          width: 92,
+          height: 92,
+          borderRadius: 46,
+          backgroundColor: colors.cardAlt,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 18,
+        },
+        successTitle: {
+          fontSize: 24,
+          fontWeight: "900",
+          color: colors.textPrimary,
+          marginBottom: 8,
+          letterSpacing: -0.5,
+        },
+        successDesc: {
+          fontSize: 14,
+          color: colors.textSecondary,
+          textAlign: "center",
+          lineHeight: 20,
+          marginBottom: 16,
+        },
+        successEmail: { color: colors.textPrimary, fontWeight: "800" },
+        successNote: {
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: colors.surface,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: colors.border,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          width: "100%",
+        },
+        successNoteText: { fontSize: 12, color: colors.muted, flex: 1 },
+        resendBtn: { marginTop: 18, paddingVertical: 8 },
+        resendText: { fontSize: 13, fontWeight: "700", color: colors.muted, textDecorationLine: "underline" },
+      }),
+    [colors]
+  );
 
   const onFocus = () => {
     Animated.timing(borderAnim, {
@@ -112,6 +232,7 @@ export default function ForgotPasswordScreen() {
       useNativeDriver: false,
     }).start();
   };
+
   const onBlur = () => {
     Animated.timing(borderAnim, {
       toValue: 0,
@@ -122,10 +243,9 @@ export default function ForgotPasswordScreen() {
 
   const borderColor = borderAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [error ? ERROR : BORDER, error ? ERROR : BLUE],
+    outputRange: [error ? colors.danger : colors.border, error ? colors.danger : colors.accent],
   });
 
-  // ── Validate ────────────────────────────────────────────────────────────────
   const validate = () => {
     if (!email.trim()) {
       setError("Email is required");
@@ -138,15 +258,12 @@ export default function ForgotPasswordScreen() {
     return true;
   };
 
-  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
-      // TODO: wire real password-reset API
-      await new Promise((res) => setTimeout(res, 1200)); // simulate network
+      await forgotPassword({ email });
       setSent(true);
-      // Animate success card in
       Animated.parallel([
         Animated.timing(successOpacity, {
           toValue: 1,
@@ -160,75 +277,57 @@ export default function ForgotPasswordScreen() {
           useNativeDriver: true,
         }),
       ]).start();
-    } catch (err) {
-      console.warn(err);
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.topBarBg} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scroll}
       >
-        <HeaderBlob />
-
-        {/* ── Logo ─────────────────────────────────────────────────── */}
-        <View style={styles.logoRow}>
-          <Text style={styles.logoFix}>Fix</Text>
-          <Text style={styles.logoGlobal}>Global</Text>
+        <View style={styles.brandRow}>
+          <Text style={styles.logoFix}>EIV</Text>
+          <Text style={styles.logoGlobal}>VER</Text>
         </View>
 
-        {/* ── Back button ──────────────────────────────────────────── */}
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={18} color={BLUE} />
-          <Text style={styles.backText}>Back to Sign In</Text>
+          <Ionicons name="chevron-back" size={18} color={colors.accent} />
+          <Text style={styles.backText}>Back to Login</Text>
         </Pressable>
 
-        {/* ── Headline ─────────────────────────────────────────────── */}
         <View style={styles.headBlock}>
-          <View style={styles.pill}>
-            <View style={styles.pillDot} />
-            <Text style={styles.pillText}>ACCOUNT RECOVERY</Text>
-          </View>
-          <Text style={styles.headline}>Reset{"\n"}Password</Text>
-          <Text style={styles.subline}>
-            Enter your email and we&apos;ll send you{"\n"}a link to get back in.
-          </Text>
+          <Text style={styles.headline}>{`Forgot your\npassword?`}</Text>
+          <Text style={styles.subline}>Enter your email and we&apos;ll send you a secure reset link.</Text>
         </View>
 
-        {/* ── Card ─────────────────────────────────────────────────── */}
         <View style={styles.card}>
           {!sent ? (
             <>
-              {/* Mail icon visual */}
               <View style={styles.iconArea}>
                 <View style={styles.iconRing}>
-                  <View style={styles.iconCircle}>
-                    <MailIcon color={BLUE} size={40} />
-                  </View>
+                  <MailIcon color={colors.accent} size={40} />
                 </View>
               </View>
 
-              {/* Email field */}
               <Text style={styles.fieldLabel}>Email Address</Text>
               <Animated.View style={[styles.inputShell, { borderColor }]}>
                 <TextInput
                   style={styles.input}
                   value={email}
-                  onChangeText={(t) => {
-                    setEmail(t);
+                  onChangeText={(value) => {
+                    setEmail(value);
                     setError("");
                   }}
                   placeholder="you@example.com"
-                  placeholderTextColor={PLACEHOLDER}
+                  placeholderTextColor={colors.muted}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -237,48 +336,36 @@ export default function ForgotPasswordScreen() {
                   editable={!loading}
                 />
               </Animated.View>
-              {error ? (
-                <Text style={styles.errorText}>{error}</Text>
-              ) : (
-                <Text style={styles.hintText}>
-                  We&apos;ll send a reset link to this address.
-                </Text>
-              )}
 
-              {/* Send button */}
+              {error ? <Text style={styles.errorText}>{error}</Text> : <Text style={styles.hintText}>We&apos;ll send a reset link to this address.</Text>}
+
               <Pressable
                 style={({ pressed }) => [
-                  styles.goldBtn,
-                  (pressed || loading) && { opacity: 0.82 },
+                  styles.primaryButton,
+                  pressed && !loading && { opacity: 0.92 },
+                  loading && { opacity: 0.8 },
                 ]}
                 onPress={handleSend}
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color={BLUE} />
+                  <ActivityIndicator color={colors.card} />
                 ) : (
-                  <View style={styles.btnInner}>
-                    <Text style={styles.goldBtnText}>Send Reset Link</Text>
-                    <Ionicons
-                      name="send"
-                      size={17}
-                      color={BLUE}
-                      style={{ marginLeft: 8 }}
-                    />
+                  <View style={styles.buttonContent}>
+                    <Text style={styles.primaryButtonText}>Send Reset Link</Text>
+                    <Ionicons name="send" size={17} color={colors.card} style={{ marginLeft: 8 }} />
                   </View>
                 )}
               </Pressable>
 
-              {/* Footer */}
               <View style={styles.footer}>
-                <Text style={styles.footerText}>Remembered it? </Text>
+                <Text style={styles.footerText}>Remembered it?</Text>
                 <Pressable onPress={() => router.push("/(auth)/login")}>
                   <Text style={styles.footerLink}>Sign in</Text>
                 </Pressable>
               </View>
             </>
           ) : (
-            /* ── Success state ─────────────────────────────────────── */
             <Animated.View
               style={[
                 styles.successBox,
@@ -288,349 +375,42 @@ export default function ForgotPasswordScreen() {
                 },
               ]}
             >
-              {/* Check circle */}
               <View style={styles.successIconWrap}>
-                <CheckIcon size={72} />
+                <CheckIcon color={colors.success} size={68} />
               </View>
 
-              <Text style={styles.successTitle}>Check your inbox!</Text>
+              <Text style={styles.successTitle}>Check your inbox</Text>
               <Text style={styles.successDesc}>
                 We sent a password reset link to{"\n"}
                 <Text style={styles.successEmail}>{email}</Text>
               </Text>
 
-              {/* Small note */}
               <View style={styles.successNote}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={15}
-                  color={PLACEHOLDER}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.successNoteText}>
-                  Didn&apos;t get it? Check your spam folder.
-                </Text>
+                <Ionicons name="information-circle-outline" size={15} color={colors.muted} style={{ marginRight: 8 }} />
+                <Text style={styles.successNoteText}>Didn&apos;t get it? Check your spam folder.</Text>
               </View>
 
-              {/* Continue to app */}
               <Pressable
                 style={({ pressed }) => [
-                  styles.goldBtn,
-                  { marginTop: 28 },
-                  pressed && { opacity: 0.82 },
+                  styles.primaryButton,
+                  { marginTop: 20 },
+                  pressed && { opacity: 0.92 },
                 ]}
-                onPress={() => router.replace("/(tabs)/home")}
+                onPress={() => router.push({ pathname: "/(auth)/reset-password", params: { email } })}
               >
-                <View style={styles.btnInner}>
-                  <Text style={styles.goldBtnText}>Continue to App</Text>
-                  <Ionicons
-                    name="arrow-forward-circle"
-                    size={20}
-                    color={BLUE}
-                    style={{ marginLeft: 6 }}
-                  />
+                <View style={styles.buttonContent}>
+                  <Text style={styles.primaryButtonText}>Use Reset Token</Text>
+                  <Ionicons name="arrow-forward" size={17} color={colors.card} style={{ marginLeft: 8, paddingVertical: 12 }} />
                 </View>
               </Pressable>
 
-              {/* Resend */}
-              <Pressable
-                style={styles.resendBtn}
-                onPress={() => {
-                  setSent(false);
-                  setEmail("");
-                }}
-              >
-                <Text style={styles.resendText}>
-                  Resend with different email
-                </Text>
+              <Pressable style={styles.resendBtn} onPress={() => { setSent(false); setEmail(""); setError(""); }}>
+                <Text style={styles.resendText}>Try a different email</Text>
               </Pressable>
             </Animated.View>
           )}
         </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: WHITE },
-  scroll: { flexGrow: 1, paddingHorizontal: 22 },
-
-  // ── Blobs — green tint this time, unique per screen ──
-  blobContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 240,
-    overflow: "hidden",
-  },
-  blobA: {
-    position: "absolute",
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: width * 0.35,
-    backgroundColor: "#D6F0E8", // green tint — unique to this screen
-    top: -width * 0.25,
-    right: -width * 0.08,
-  },
-  blobB: {
-    position: "absolute",
-    width: width * 0.48,
-    height: width * 0.48,
-    borderRadius: width * 0.24,
-    backgroundColor: "#DDEAFD", // blue tint
-    top: -width * 0.05,
-    left: -width * 0.1,
-    opacity: 0.7,
-  },
-  blobC: {
-    position: "absolute",
-    width: width * 0.26,
-    height: width * 0.26,
-    borderRadius: width * 0.13,
-    backgroundColor: "#FFF3C4", // gold tint
-    top: width * 0.24,
-    right: width * 0.1,
-    opacity: 0.6,
-  },
-
-  // ── Logo ──
-  logoRow: { flexDirection: "row", alignItems: "center", marginTop: 58 },
-  logoFix: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: BLUE,
-    letterSpacing: -0.4,
-  },
-  logoGlobal: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: GOLD,
-    letterSpacing: -0.4,
-  },
-
-  // ── Back button ──
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
-    alignSelf: "flex-start",
-    paddingVertical: 4,
-  },
-  backText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: BLUE,
-    marginLeft: 2,
-  },
-
-  // ── Headline ──
-  headBlock: { marginTop: 20, marginBottom: 28 },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "#D6F0E8", // green pill — unique
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginBottom: 14,
-  },
-  pillDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: SUCCESS,
-    marginRight: 7,
-  },
-  pillText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#0E5C3A",
-    letterSpacing: 1.2,
-  },
-  headline: {
-    fontSize: 42,
-    fontWeight: "900",
-    color: BLUE,
-    lineHeight: 48,
-    letterSpacing: -1,
-    marginBottom: 10,
-  },
-  subline: {
-    fontSize: 15,
-    color: PLACEHOLDER,
-    fontWeight: "500",
-    lineHeight: 22,
-  },
-
-  // ── Card ──
-  card: {
-    backgroundColor: WHITE,
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 28,
-    shadowColor: BLUE,
-    shadowOpacity: 0.1,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: "#EAF0FB",
-  },
-
-  // ── Mail icon visual ──
-  iconArea: { alignItems: "center", marginBottom: 24 },
-  iconRing: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#EEF4FD",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#D6E4F7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // ── Field ──
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: LABEL,
-    marginBottom: 7,
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-  },
-  inputShell: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderRadius: 12,
-    backgroundColor: LIGHT,
-    paddingHorizontal: 14,
-    height: 48,
-    marginBottom: 6,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: BLUE,
-    fontWeight: "500",
-  },
-  errorText: {
-    color: ERROR,
-    fontSize: 11,
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-  hintText: {
-    color: PLACEHOLDER,
-    fontSize: 12,
-    fontWeight: "500",
-    marginBottom: 20,
-  },
-
-  // ── Gold button ──
-  goldBtn: {
-    height: 54,
-    backgroundColor: GOLD,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  goldBtnText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: BLUE,
-    letterSpacing: 0.2,
-  },
-  btnInner: { flexDirection: "row", alignItems: "center" },
-
-  // ── Footer ──
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  footerText: { fontSize: 14, color: PLACEHOLDER },
-  footerLink: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: BLUE,
-    textDecorationLine: "underline",
-  },
-
-  // ── Success state ──
-  successBox: { alignItems: "center", paddingTop: 8 },
-  successIconWrap: {
-    marginBottom: 20,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#E5F5EE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: BLUE,
-    marginBottom: 10,
-    letterSpacing: -0.5,
-  },
-  successDesc: {
-    fontSize: 15,
-    color: PLACEHOLDER,
-    textAlign: "center",
-    lineHeight: 22,
-    fontWeight: "500",
-    marginBottom: 16,
-  },
-  successEmail: {
-    color: BLUE,
-    fontWeight: "800",
-  },
-  successNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: LIGHT,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  successNoteText: {
-    fontSize: 12,
-    color: PLACEHOLDER,
-    fontWeight: "500",
-    flex: 1,
-  },
-  resendBtn: {
-    marginTop: 16,
-    paddingVertical: 8,
-  },
-  resendText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: PLACEHOLDER,
-    textDecorationLine: "underline",
-  },
-});

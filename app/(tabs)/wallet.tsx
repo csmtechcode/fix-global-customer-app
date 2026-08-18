@@ -78,10 +78,8 @@ export default function WalletScreen() {
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
       {/* Top navigation bar */}
       <TopBar
-        location="Lagos, NG"
-        notificationCount={3}
-        initials="JD"
         onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onSettingsPress={() => router.push("/(tabs)/settings")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />

@@ -139,6 +139,12 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     lineHeight: 20,
   },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: BLUE,
+    marginBottom: 16,
+  },
   card: {
     backgroundColor: WHITE,
     borderRadius: 18,

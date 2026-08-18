@@ -1,687 +1,368 @@
 // ─── app/(auth)/signup.tsx ────────────────────────────────────────────────────
-// FixGlobal — Customer Signup Screen
-// White bg, blue + gold brand, inspired by the onboarding visual language
+// Customer signup screen with app theme styling and working validation flow.
 
-import React, { useState, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   StatusBar,
-  ActivityIndicator,
-  Animated,
-  Dimensions,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import Svg, { Circle, Path, Line } from "react-native-svg";
+import useTheme from "@/src/context/ThemeContext";
+import { registerCustomer } from "@/src/features/auth/api";
+import SignupFormCard from "./components/SignupFormCard";
 
-const { width } = Dimensions.get("window");
-
-// ─── Brand tokens (mirrors onboarding) ───────────────────────────────────────
-const BLUE = "#1A3C6E";
-const GOLD = "#ffc300";
-const WHITE = "#FFFFFF";
-const LIGHT = "#F4F7FD";
-const BORDER = "#DDE4F0";
-const PLACEHOLDER = "#8FA0B8";
-const ERROR = "#E84040";
-const LABEL = "#3A4E6A";
-
-// ─── Eye icons ────────────────────────────────────────────────────────────────
-function EyeIcon({ color = PLACEHOLDER }: { color?: string }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Circle cx={12} cy={12} r={3} stroke={color} strokeWidth={1.8} />
-    </Svg>
-  );
-}
-function EyeOffIcon({ color = PLACEHOLDER }: { color?: string }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M14.12 14.12a3 3 0 11-4.24-4.24"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Line
-        x1={1}
-        y1={1}
-        x2={23}
-        y2={23}
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-// ─── Decorative header blob (same visual language as onboarding blobs) ────────
-function HeaderBlob() {
-  return (
-    <View style={styles.blobContainer} pointerEvents="none">
-      <View style={styles.blobA} />
-      <View style={styles.blobB} />
-      <View style={styles.blobC} />
-    </View>
-  );
-}
-
-// ─── Reusable field component ─────────────────────────────────────────────────
-interface FieldProps {
-  label: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  placeholder: string;
-  error?: string;
-  keyboardType?: "default" | "email-address";
-  autoCapitalize?: "none" | "words";
-  secure?: boolean;
-  showToggle?: boolean;
-  showSecure?: boolean;
-  onToggleSecure?: () => void;
-  style?: object;
-  editable?: boolean;
-}
-
-function Field({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  error,
-  keyboardType = "default",
-  autoCapitalize = "none",
-  secure = false,
-  showToggle = false,
-  showSecure = false,
-  onToggleSecure,
-  style,
-  editable = true,
-}: FieldProps) {
-  const [focused, setFocused] = useState(false);
-  const borderAnim = useRef(new Animated.Value(0)).current;
-
-  const onFocus = () => {
-    setFocused(true);
-    Animated.timing(borderAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  };
-  const onBlur = () => {
-    setFocused(false);
-    Animated.timing(borderAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const borderColor = borderAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [error ? ERROR : BORDER, error ? ERROR : BLUE],
-  });
-
-  return (
-    <View style={[styles.fieldWrapper, style]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <Animated.View style={[styles.inputShell, { borderColor }]}>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={PLACEHOLDER}
-          keyboardType={keyboardType}
-          autoCapitalize={autoCapitalize}
-          autoCorrect={false}
-          secureTextEntry={secure && !showSecure}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          editable={editable}
-        />
-        {showToggle && (
-          <Pressable
-            onPress={onToggleSecure}
-            style={styles.eyeBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            {showSecure ? (
-              <EyeOffIcon color={focused ? BLUE : PLACEHOLDER} />
-            ) : (
-              <EyeIcon color={focused ? BLUE : PLACEHOLDER} />
-            )}
-          </Pressable>
-        )}
-      </Animated.View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
-  );
-}
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SignupScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("+234");
   const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showCpw, setShowCpw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [gLoading, setGLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [registeredUserId, setRegisteredUserId] = useState("");
 
-  // ── Validation ──────────────────────────────────────────────────────────────
+  const dynamicStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: {
+          flex: 1,
+          backgroundColor: colors.background,
+        },
+        scroll: {
+          flexGrow: 1,
+          paddingHorizontal: 22,
+          paddingTop: Platform.OS === "ios" ? 18 : 28,
+          paddingBottom: 28,
+        },
+        brandWrap: {
+          marginTop: 12,
+          marginBottom: 12,
+        },
+        logoRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          marginTop: 8,
+        },
+        logoFix: {
+          fontSize: 22,
+          fontWeight: "900",
+          color: colors.textPrimary,
+          letterSpacing: -0.4,
+        },
+        logoGlobal: {
+          fontSize: 22,
+          fontWeight: "900",
+          color: colors.accent,
+          letterSpacing: -0.4,
+        },
+        headerSpacer: {
+          height: 12,
+        },
+        footer: {
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 24,
+          paddingTop: 8,
+          paddingBottom: 24,
+        },
+        footerText: {
+          color: colors.textSecondary,
+          fontSize: 14,
+        },
+        footerLink: {
+          color: colors.accent,
+          fontSize: 14,
+          fontWeight: "700",
+          marginLeft: 4,
+        },
+        bottomSpacer: {
+          height: 24,
+        },
+        modalOverlay: {
+          flex: 1,
+          backgroundColor: "rgba(15, 18, 22, 0.48)",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+        },
+        modalCard: {
+          width: "100%",
+          maxWidth: 360,
+          backgroundColor: colors.panel,
+          borderRadius: 22,
+          padding: 24,
+          alignItems: "center",
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+        modalIcon: {
+          width: 64,
+          height: 64,
+          borderRadius: 32,
+          backgroundColor: colors.success + "22",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 12,
+        },
+        headBlock: { marginTop: 32, marginBottom: 28 },
+        pill: {
+          flexDirection: "row",
+          alignItems: "center",
+          alignSelf: "flex-start",
+          backgroundColor: colors.cardAlt,
+          paddingVertical: 6,
+          paddingHorizontal: 12,
+          borderRadius: 20,
+          marginBottom: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+        pillDot: {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: colors.accent,
+          marginRight: 8,
+        },
+        pillText: {
+          fontSize: 11,
+          fontWeight: "800",
+          color: colors.textSecondary,
+          letterSpacing: 1.2,
+        },
+        headline: { fontSize: 42, fontWeight: "900", color: colors.textPrimary, lineHeight: 48, letterSpacing: -1, marginBottom: 10 },
+        subline: { fontSize: 15, color: colors.textSecondary, fontWeight: "500", lineHeight: 22 },
+
+        modalIconText: {
+          color: colors.success,
+          fontSize: 30,
+          fontWeight: "800",
+        },
+        modalTitle: {
+          color: colors.textPrimary,
+          fontSize: 22,
+          fontWeight: "800",
+          marginBottom: 8,
+        },
+        modalText: {
+          color: colors.textSecondary,
+          fontSize: 14,
+          lineHeight: 20,
+          textAlign: "center",
+          marginBottom: 20,
+        },
+        modalButton: {
+          width: "100%",
+          minHeight: 52,
+          borderRadius: 12,
+          backgroundColor: colors.accent,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        modalButtonText: {
+          color: colors.card,
+          fontSize: 15,
+          fontWeight: "700",
+        },
+      }),
+    [colors]
+  );
+
   const validate = () => {
-    const e: Record<string, string> = {};
-    if (!firstName.trim()) e.firstName = "Required";
-    if (!lastName.trim()) e.lastName = "Required";
-    if (!email.trim()) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      e.email = "Invalid email";
-    if (!password) e.password = "Password is required";
-    else if (password.length < 8) e.password = "Min. 8 characters";
-    if (!confirm) e.confirm = "Please confirm password";
-    else if (confirm !== password) e.confirm = "Passwords don't match";
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    const nextErrors: Record<string, string> = {};
+
+    if (!firstName.trim()) nextErrors.firstName = "Required";
+    if (!lastName.trim()) nextErrors.lastName = "Required";
+    if (!email.trim()) nextErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = "Invalid email";
+    if (!phoneNumber.trim()) nextErrors.phoneNumber = "Phone number is required";
+    else if (!/^\+?[1-9]\d{9,14}$/.test(phoneNumber)) nextErrors.phoneNumber = "Invalid phone number";
+    if (!password) nextErrors.password = "Password is required";
+    else if (password.length < 8) nextErrors.password = "Min. 8 characters";
+    if (!confirm) nextErrors.confirm = "Please confirm password";
+    else if (confirm !== password) nextErrors.confirm = "Passwords don't match";
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
-  const clearErr = (f: string) =>
+  const clearErr = (field: string) => {
     setErrors((prev) => {
-      const n = { ...prev };
-      delete n[f];
-      return n;
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
     });
+  };
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSignup = async () => {
     if (!validate()) return;
+
     setLoading(true);
+    setErrors({});
+
+    const payload = { firstName, lastName, email, phoneNumber, password };
+
     try {
-      // TODO: wire up real API
-      console.log("Signup →", { firstName, lastName, email });
-      router.replace("/(tabs)/home");
-    } catch (err) {
-      console.error(err);
+      const response = await registerCustomer(payload);
+      const userId = response?.data?.user?.id ?? "";
+
+      setRegisteredUserId(userId);
+      setSuccessMessage(
+        response?.message || "Account created. Please verify your code to continue."
+      );
+      setSuccessModalVisible(true);
+    } catch (err: any) {
+      setErrors({
+        general: err?.message ?? "We could not create your account. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogle = async () => {
-    setGLoading(true);
-    try {
-      // TODO: @react-native-google-signin/google-signin
-      console.log("Google signup");
-    } finally {
-      setGLoading(false);
-    }
+  const onFirstNameChange = (value: string) => {
+    setFirstName(value);
+    clearErr("firstName");
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  const onLastNameChange = (value: string) => {
+    setLastName(value);
+    clearErr("lastName");
+  };
+
+  const onEmailChange = (value: string) => {
+    setEmail(value);
+    clearErr("email");
+  };
+
+  const onPhoneChange = (value: string) => {
+    setPhoneNumber(value);
+    clearErr("phoneNumber");
+  };
+
+  const onPasswordChange = (value: string) => {
+    setPassword(value);
+    clearErr("password");
+  };
+
+  const onConfirmChange = (value: string) => {
+    setConfirm(value);
+    clearErr("confirm");
+  };
+
+  const handleContinueToVerification = () => {
+    setSuccessModalVisible(false);
+    router.replace({
+      pathname: "/(auth)/verify-customer",
+      params: { userId: registeredUserId, email, phoneNumber },
+    });
+  };
+
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+    <View style={dynamicStyles.root}>
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.topBarBg} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scroll}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
       >
-        {/* ── Decorative header blobs ───────────────────────────────── */}
-        <HeaderBlob />
-
-        {/* ── Logo ─────────────────────────────────────────────────── */}
-        <View style={styles.logoRow}>
-          <Text style={styles.logoFix}>Fix</Text>
-          <Text style={styles.logoGlobal}>Global</Text>
-        </View>
-
-        {/* ── Headline ─────────────────────────────────────────────── */}
-        <View style={styles.headBlock}>
-          {/* Gold pill — same as onboarding label pills */}
-          <View style={styles.pill}>
-            <View style={styles.pillDot} />
-            <Text style={styles.pillText}>NEW ACCOUNT</Text>
-          </View>
-          <Text style={styles.headline}>Join{"\n"}FixGlobal</Text>
-          <Text style={styles.subline}>Trusted fixers, one tap away.</Text>
-        </View>
-
-        {/* ── Form card ────────────────────────────────────────────── */}
-        <View style={styles.card}>
-          {/* First + Last name side by side */}
-          <View style={styles.nameRow}>
-            <Field
-              label="First Name"
-              value={firstName}
-              onChangeText={(t) => {
-                setFirstName(t);
-                clearErr("firstName");
-              }}
-              placeholder="John"
-              autoCapitalize="words"
-              error={errors.firstName}
-              style={styles.halfField}
-              editable={!loading}
-            />
-            <View style={{ width: 12 }} />
-            <Field
-              label="Last Name"
-              value={lastName}
-              onChangeText={(t) => {
-                setLastName(t);
-                clearErr("lastName");
-              }}
-              placeholder="Doe"
-              autoCapitalize="words"
-              error={errors.lastName}
-              style={styles.halfField}
-              editable={!loading}
-            />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={dynamicStyles.scroll}
+        >
+          <View style={dynamicStyles.brandWrap}>
+            <View style={dynamicStyles.logoRow}>
+              <Text style={dynamicStyles.logoFix}>EIV</Text>
+              <Text style={dynamicStyles.logoGlobal}>VER</Text>
+            </View>
           </View>
 
-          {/* Email */}
-          <Field
-            label="Email Address"
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              clearErr("email");
-            }}
-            placeholder="you@example.com"
-            keyboardType="email-address"
-            error={errors.email}
-            editable={!loading}
-          />
-
-          {/* Password */}
-          <Field
-            label="Password"
-            value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              clearErr("password");
-            }}
-            placeholder="Min. 8 characters"
-            secure
-            showToggle
-            showSecure={showPw}
-            onToggleSecure={() => setShowPw((v) => !v)}
-            error={errors.password}
-            editable={!loading}
-          />
-
-          {/* Confirm password */}
-          <Field
-            label="Confirm Password"
-            value={confirm}
-            onChangeText={(t) => {
-              setConfirm(t);
-              clearErr("confirm");
-            }}
-            placeholder="Re-enter password"
-            secure
-            showToggle
-            showSecure={showCpw}
-            onToggleSecure={() => setShowCpw((v) => !v)}
-            error={errors.confirm}
-            editable={!loading}
-          />
-
-          {/* ── Create Account button (GOLD) ───────────────────────── */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.goldBtn,
-              (pressed || loading) && { opacity: 0.82 },
-            ]}
-            onPress={handleSignup}
-            disabled={loading || gLoading}
-          >
-            {loading ? (
-              <ActivityIndicator color={BLUE} />
-            ) : (
-              <View style={styles.btnInner}>
-                <Text style={styles.goldBtnText}>Create My Account</Text>
-                <Ionicons
-                  name="arrow-forward-circle"
-                  size={20}
-                  color={BLUE}
-                  style={{ marginLeft: 6 }}
-                />
-              </View>
-            )}
-          </Pressable>
-
-          {/* ── Divider ────────────────────────────────────────────── */}
-          <View style={styles.divider}>
-            <View style={styles.divLine} />
-            <Text style={styles.divText}>or continue with</Text>
-            <View style={styles.divLine} />
+          <View style={dynamicStyles.headBlock}>
+            <View style={dynamicStyles.pill}>
+              <View style={dynamicStyles.pillDot} />
+              <Text style={dynamicStyles.pillText}>WELCOME TO EIVVER</Text>
+            </View>
+            <Text style={dynamicStyles.headline}>Join{"\n"}Us Now</Text>
+            <Text style={dynamicStyles.subline}>Your trusted fixers are waiting.</Text>
           </View>
 
-          {/* ── Google button ──────────────────────────────────────── */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.googleBtn,
-              (pressed || gLoading) && { opacity: 0.78 },
-            ]}
-            onPress={handleGoogle}
-            disabled={loading || gLoading}
-          >
-            {gLoading ? (
-              <ActivityIndicator color={BLUE} />
-            ) : (
-              <View style={styles.btnInner}>
-                {/* Inline Google G — no extra dep */}
-                <View style={styles.gCircle}>
-                  <Text style={styles.gLetter}>G</Text>
-                </View>
-                <Text style={styles.googleBtnText}>Sign up with Google</Text>
-              </View>
-            )}
-          </Pressable>
+          <SignupFormCard
+            firstName={firstName}
+            lastName={lastName}
+            email={email}
+            phoneNumber={phoneNumber}
+            password={password}
+            confirm={confirm}
+            showPw={showPw}
+            showCpw={showCpw}
+            errors={errors}
+            generalError={errors.general}
+            loading={loading}
+            onFirstNameChange={onFirstNameChange}
+            onLastNameChange={onLastNameChange}
+            onEmailChange={onEmailChange}
+            onPhoneChange={onPhoneChange}
+            onPasswordChange={onPasswordChange}
+            onConfirmChange={onConfirmChange}
+            onTogglePassword={() => setShowPw((value) => !value)}
+            onToggleConfirm={() => setShowCpw((value) => !value)}
+            onSubmit={handleSignup}
+          />
 
-          {/* ── Footer ─────────────────────────────────────────────── */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+          <View style={dynamicStyles.footer}>
+            <Text style={dynamicStyles.footerText}>Already have an account?</Text>
             <Pressable onPress={() => router.push("/(auth)/login")}>
-              <Text style={styles.footerLink}>Sign in</Text>
+              <Text style={dynamicStyles.footerLink}>Sign in</Text>
+            </Pressable>
+          </View>
+
+          <View style={dynamicStyles.bottomSpacer} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={successModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSuccessModalVisible(false)}
+      >
+        <View style={dynamicStyles.modalOverlay}>
+          <View style={dynamicStyles.modalCard}>
+            <View style={dynamicStyles.modalIcon}>
+              <Text style={dynamicStyles.modalIconText}>✓</Text>
+            </View>
+            <Text style={dynamicStyles.modalTitle}>Account created</Text>
+            <Text style={dynamicStyles.modalText}>{successMessage}</Text>
+            <Pressable style={dynamicStyles.modalButton} onPress={handleContinueToVerification}>
+              {loading ? (
+                <ActivityIndicator color={colors.panel} />
+              ) : (
+                <Text style={dynamicStyles.modalButtonText}>Continue to verification</Text>
+              )}
             </Pressable>
           </View>
         </View>
-
-        {/* Bottom breathing room */}
-        <View style={{ height: 40 }} />
-      </ScrollView>
+      </Modal>
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: WHITE },
-
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 22,
-    paddingTop: 0,
-  },
-
-  // ── Decorative blobs (top of screen, same family as onboarding) ──
-  blobContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 240,
-    overflow: "hidden",
-  },
-  blobA: {
-    position: "absolute",
-    width: width * 0.75,
-    height: width * 0.75,
-    borderRadius: width * 0.375,
-    backgroundColor: "#DDEAFD", // slide-1 blue tint
-    top: -width * 0.3,
-    right: -width * 0.1,
-  },
-  blobB: {
-    position: "absolute",
-    width: width * 0.45,
-    height: width * 0.45,
-    borderRadius: width * 0.225,
-    backgroundColor: "#FFF3C4", // gold tint
-    top: -width * 0.05,
-    left: -width * 0.1,
-    opacity: 0.7,
-  },
-  blobC: {
-    position: "absolute",
-    width: width * 0.3,
-    height: width * 0.3,
-    borderRadius: width * 0.15,
-    backgroundColor: "#C5D8FB",
-    top: width * 0.2,
-    right: width * 0.05,
-    opacity: 0.5,
-  },
-
-  // ── Logo ──
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 58,
-    marginBottom: 0,
-  },
-  logoFix: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: BLUE,
-    letterSpacing: -0.4,
-  },
-  logoGlobal: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: GOLD,
-    letterSpacing: -0.4,
-  },
-
-  // ── Headline block ──
-  headBlock: {
-    marginTop: 32,
-    marginBottom: 28,
-  },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "#FFF3C4",
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginBottom: 14,
-  },
-  pillDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: GOLD,
-    marginRight: 7,
-  },
-  pillText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#8B6914",
-    letterSpacing: 1.2,
-  },
-  headline: {
-    fontSize: 42,
-    fontWeight: "900",
-    color: BLUE,
-    lineHeight: 48,
-    letterSpacing: -1,
-    marginBottom: 10,
-  },
-  subline: {
-    fontSize: 15,
-    color: PLACEHOLDER,
-    fontWeight: "500",
-    lineHeight: 22,
-  },
-
-  // ── Card ──
-  card: {
-    backgroundColor: WHITE,
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 28,
-    shadowColor: BLUE,
-    shadowOpacity: 0.1,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: "#EAF0FB",
-  },
-
-  // ── Name row ──
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 4,
-  },
-  halfField: { flex: 1 },
-
-  // ── Field ──
-  fieldWrapper: { marginBottom: 16 },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: LABEL,
-    marginBottom: 7,
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-  },
-  inputShell: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderRadius: 12,
-    backgroundColor: LIGHT,
-    paddingHorizontal: 14,
-    height: 48,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: BLUE,
-    fontWeight: "500",
-  },
-  eyeBtn: {
-    paddingLeft: 8,
-    paddingVertical: 4,
-  },
-  errorText: {
-    color: ERROR,
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 4,
-  },
-
-  // ── Gold CTA button ──
-  goldBtn: {
-    height: 54,
-    backgroundColor: GOLD,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    marginBottom: 20,
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  goldBtnText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: BLUE,
-    letterSpacing: 0.2,
-  },
-
-  btnInner: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  // ── Divider ──
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    gap: 10,
-  },
-  divLine: { flex: 1, height: 1, backgroundColor: BORDER },
-  divText: { fontSize: 12, color: PLACEHOLDER, fontWeight: "500" },
-
-  // ── Google button ──
-  googleBtn: {
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: WHITE,
-    marginBottom: 24,
-  },
-  gCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#EAF0FB",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-  gLetter: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#4285F4",
-  },
-  googleBtnText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: BLUE,
-  },
-
-  // ── Footer ──
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerText: { fontSize: 14, color: PLACEHOLDER },
-  footerLink: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: BLUE,
-    textDecorationLine: "underline",
-  },
-});

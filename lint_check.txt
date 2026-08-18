@@ -1,0 +1,6 @@
+npm notice run fix-global-customer-app@1.0.0 npx
+npm notice run expo lint
+env: load .env
+env: export EXPO_PUBLIC_API_URL
+npm notice run fix-global-customer-app@1.0.0 npx
+npm notice run eslint C:\Users\USER\Desktop\ReactNative\fix-global-customer-app\src C:\Users\USER\Desktop\ReactNative\fix-global-customer-app\app --fix=false --cache=true --cache-location=C:\Users\USER\Desktop\ReactNative\fix-global-customer-app\.expo\cache\eslint\

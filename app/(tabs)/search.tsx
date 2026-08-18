@@ -3,7 +3,7 @@
 // Live search + filter sheet (distance, rating, reviews, price)
 // Full dark-mode support via useTheme — mirrors home.tsx pattern
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,114 +16,76 @@ import {
   Modal,
   Animated,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
 import useTheme from "../../src/context/ThemeContext";
+import { searchFixers, type SearchFixerResult } from "../../src/features/auth/api";
 
 const { height } = Dimensions.get("window");
+const DEFAULT_COORDS = { lat: 6.5244, lng: 3.3792 };
 
 // ─── Static tokens (non-theme) ────────────────────────────────────────────────
 const GOLD = "#FFC300";
 const WHITE = "#FFFFFF";
 const BLUE = "#1A3C6E";
 
-// ─── Mock fixers data ─────────────────────────────────────────────────────────
-const ALL_FIXERS = [
-  {
-    id: "1",
-    name: "Chukwudi Adeyemi",
-    trade: "Master Plumber",
-    category: "Plumbing",
-    rating: 4.9,
-    reviews: 214,
-    distance: 1.2,
-    price: 3500,
-    priceLabel: "₦3,500/hr",
-    tag: "Top Rated",
-    tagColor: GOLD,
-    tagText: BLUE,
+interface ApiFixerResult {
+  id: string;
+  name: string;
+  trade: string;
+  category: string;
+  rating: number;
+  reviews: number;
+  distance: number;
+  price: number;
+  priceLabel: string;
+  tag: string;
+  tagColor: string;
+  tagText: string;
+  avatarBg: string;
+  initials: string;
+  avatar: string;
+  available: boolean;
+}
+
+function mapFixerResult(result: SearchFixerResult): ApiFixerResult {
+  const displayName = result.displayName || result.name || "Fixer";
+  const trade = result.trade || result.category || "Service Professional";
+  const rating = Number(result.rating ?? 0);
+  const distance = Number(result.distanceKm ?? result.distance ?? 0);
+  const reviews = Number(result.reviews ?? Math.max(20, Math.round(rating * 30)));
+  const price = Number(result.price ?? 3000);
+
+  return {
+    id: result.id,
+    name: displayName,
+    trade,
+    category: trade,
+    rating: Number.isFinite(rating) ? rating : 0,
+    reviews,
+    distance: Number.isFinite(distance) ? distance : 0,
+    price,
+    priceLabel: `₦${price.toLocaleString()}/hr`,
+    tag: result.availabilityStatus === "online" ? "Online" : "Available",
+    tagColor: result.availabilityStatus === "online" ? "#ECFDF5" : "#EFF6FF",
+    tagText: result.availabilityStatus === "online" ? "#10B981" : BLUE,
     avatarBg: "#1A3C6E",
-    initials: "CA",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    available: true,
-  },
-  {
-    id: "2",
-    name: "Amara Okonkwo",
-    trade: "Certified Electrician",
-    category: "Electrical",
-    rating: 4.8,
-    reviews: 178,
-    distance: 2.4,
-    price: 4000,
-    priceLabel: "₦4,000/hr",
-    tag: "Fast Response",
-    tagColor: "#ECFDF5",
-    tagText: "#10B981",
-    avatarBg: "#8B5CF6",
-    initials: "AO",
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    available: true,
-  },
-  {
-    id: "3",
-    name: "Emeka Tunde",
-    trade: "Painter & Decorator",
-    category: "Painting",
-    rating: 4.7,
-    reviews: 132,
-    distance: 3.1,
-    price: 2800,
-    priceLabel: "₦2,800/hr",
-    tag: "Popular",
-    tagColor: "#EFF6FF",
-    tagText: "#3B82F6",
-    avatarBg: "#EF4444",
-    initials: "ET",
-    avatar: "https://randomuser.me/api/portraits/men/55.jpg",
-    available: false,
-  },
-  {
-    id: "4",
-    name: "Fatima Kabir",
-    trade: "Deep Cleaning Expert",
-    category: "Cleaning",
-    rating: 5.0,
-    reviews: 98,
-    distance: 0.8,
-    price: 5500,
-    priceLabel: "₦5,500/hr",
-    tag: "⭐ New",
-    tagColor: "#F5F3FF",
-    tagText: "#8B5CF6",
-    avatarBg: "#10B981",
-    initials: "FK",
-    avatar: "https://randomuser.me/api/portraits/women/68.jpg",
-    available: true,
-  },
-  {
-    id: "5",
-    name: "Biodun Salami",
-    trade: "AC & Appliance Repair",
-    category: "AC Repair",
-    rating: 4.6,
-    reviews: 89,
-    distance: 4.5,
-    price: 6000,
-    priceLabel: "₦6,000/hr",
-    tag: "Verified",
-    tagColor: "#FEF9EC",
-    tagText: "#B8860B",
-    avatarBg: "#06B6D4",
-    initials: "BS",
-    avatar: "https://randomuser.me/api/portraits/men/76.jpg",
-    available: true,
-  },
-];
+    initials: displayName
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "FX",
+    avatar: result.avatar || "https://randomuser.me/api/portraits/lego/1.jpg",
+    available: String(result.availabilityStatus || result.availability || "online").toLowerCase() === "online",
+  };
+}
 
 const CATEGORIES = [
   { id: "all", label: "All", icon: "grid-outline" },
@@ -138,17 +100,15 @@ const CATEGORIES = [
 interface Filters {
   maxDistance: number;
   minRating: number;
-  minReviews: number;
-  maxPrice: number;
-  sortBy: "rating" | "distance" | "price" | "reviews";
+  availability: "all" | "online" | "offline";
+  sortBy: "rating" | "distance";
 }
 
 const DEFAULT_FILTERS: Filters = {
   maxDistance: 10,
   minRating: 0,
-  minReviews: 0,
-  maxPrice: 10000,
-  sortBy: "rating",
+  availability: "all",
+  sortBy: "distance",
 };
 
 // ─── Fixer card ───────────────────────────────────────────────────────────────
@@ -156,7 +116,7 @@ function FixerCard({
   fixer,
   onViewProfile,
 }: {
-  fixer: (typeof ALL_FIXERS)[0];
+  fixer: ApiFixerResult;
   onViewProfile: () => void;
 }) {
   const { colors } = useTheme();
@@ -287,10 +247,14 @@ function FilterSheet({
   }, [visible, slideAnim]);
 
   const SORT_OPTIONS: { key: Filters["sortBy"]; label: string }[] = [
-    { key: "rating", label: "⭐ Rating" },
     { key: "distance", label: "📍 Distance" },
-    { key: "price", label: "💰 Price" },
-    { key: "reviews", label: "💬 Reviews" },
+    { key: "rating", label: "⭐ Rating" },
+  ];
+
+  const AVAILABILITY_OPTIONS: { key: Filters["availability"]; label: string }[] = [
+    { key: "all", label: "Any" },
+    { key: "online", label: "Online" },
+    { key: "offline", label: "Offline" },
   ];
 
   return (
@@ -427,79 +391,35 @@ function FilterSheet({
             ))}
           </View>
 
-          {/* Min reviews */}
+          {/* Availability */}
           <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
-            Min Reviews:{" "}
-            <Text style={[styles.filterValue, { color: colors.accent }]}>
-              {local.minReviews === 0 ? "Any" : `${local.minReviews}+`}
-            </Text>
+            Availability
           </Text>
-          <View style={styles.sliderRow}>
-            {[0, 50, 100, 150, 200].map((v) => (
+          <View style={styles.sortRow}>
+            {AVAILABILITY_OPTIONS.map((opt) => (
               <Pressable
-                key={v}
+                key={opt.key}
                 style={[
-                  styles.sliderChip,
+                  styles.sortChip,
                   {
                     backgroundColor: colors.surface,
                     borderColor: colors.border,
                   },
-                  local.minReviews === v && {
-                    backgroundColor: colors.accent,
-                    borderColor: colors.accent,
+                  local.availability === opt.key && {
+                    backgroundColor: colors.icon,
+                    borderColor: colors.icon,
                   },
                 ]}
-                onPress={() => setLocal((p) => ({ ...p, minReviews: v }))}
+                onPress={() => setLocal((p) => ({ ...p, availability: opt.key }))}
               >
                 <Text
                   style={[
-                    styles.sliderChipText,
+                    styles.sortChipText,
                     { color: colors.textSecondary },
-                    local.minReviews === v && { color: colors.panel },
+                    local.availability === opt.key && { color: colors.panel },
                   ]}
                 >
-                  {v === 0 ? "Any" : `${v}+`}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Max price */}
-          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>
-            Max Price:{" "}
-            <Text style={[styles.filterValue, { color: colors.accent }]}>
-              {local.maxPrice >= 10000
-                ? "Any"
-                : `₦${local.maxPrice.toLocaleString()}/hr`}
-            </Text>
-          </Text>
-          <View style={styles.sliderRow}>
-            {[2000, 3500, 5000, 7500, 10000].map((v) => (
-              <Pressable
-                key={v}
-                style={[
-                  styles.sliderChip,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                  local.maxPrice === v && {
-                    backgroundColor: colors.accent,
-                    borderColor: colors.accent,
-                  },
-                ]}
-                onPress={() => setLocal((p) => ({ ...p, maxPrice: v }))}
-              >
-                <Text
-                  style={[
-                    styles.sliderChipText,
-                    { color: colors.textSecondary },
-                    local.maxPrice === v && { color: colors.panel },
-                  ]}
-                >
-                  {v >= 10000
-                    ? "Any"
-                    : `₦${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k`}
+                  {opt.label}
                 </Text>
               </Pressable>
             ))}
@@ -545,47 +465,178 @@ export default function SearchScreen() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
+  const [results, setResults] = useState<ApiFixerResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userCoords, setUserCoords] = useState(DEFAULT_COORDS);
+  const [locationStatus, setLocationStatus] = useState<"loading" | "ready" | "fallback">("loading");
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
 
-  // Count active filters
+  const logLocationState = (status: "loading" | "ready" | "fallback", coords = userCoords) => {
+    console.log("[search] location state", {
+      status,
+      lat: coords.lat,
+      lng: coords.lng,
+      usingRealLocation: status === "ready",
+      usingFallback: status === "fallback",
+    });
+  };
+
+  const resolveLocation = async (fromUserPrompt = false) => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocationStatus("fallback");
+        setUserCoords(DEFAULT_COORDS);
+        setLocationModalVisible(fromUserPrompt);
+        logLocationState("fallback", DEFAULT_COORDS);
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const nextCoords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      setUserCoords(nextCoords);
+      setLocationStatus("ready");
+      setLocationModalVisible(false);
+      logLocationState("ready", nextCoords);
+    } catch (locationError) {
+      console.warn("[search] location unavailable, using fallback coordinates", locationError);
+      setUserCoords(DEFAULT_COORDS);
+      setLocationStatus("fallback");
+      setLocationModalVisible(fromUserPrompt || true);
+      logLocationState("fallback", DEFAULT_COORDS);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLocation = async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (!active) return;
+
+        if (status !== "granted") {
+          setLocationStatus("fallback");
+          setUserCoords(DEFAULT_COORDS);
+          setLocationModalVisible(true);
+          logLocationState("fallback", DEFAULT_COORDS);
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        if (!active) return;
+        const nextCoords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserCoords(nextCoords);
+        setLocationStatus("ready");
+        setLocationModalVisible(false);
+        logLocationState("ready", nextCoords);
+      } catch (locationError) {
+        console.warn("[search] location unavailable, using fallback coordinates", locationError);
+        if (!active) return;
+        setUserCoords(DEFAULT_COORDS);
+        setLocationStatus("fallback");
+        setLocationModalVisible(true);
+        logLocationState("fallback", DEFAULT_COORDS);
+      }
+    };
+
+    loadLocation();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFixers = async () => {
+      const service = activeCategory !== "all" ? activeCategory : query.trim() || undefined;
+      const availability = filters.availability === "all" ? undefined : filters.availability;
+      const requestParams = {
+        service,
+        rating: filters.minRating > 0 ? filters.minRating : undefined,
+        availability,
+        lat: userCoords.lat,
+        lng: userCoords.lng,
+        radius: filters.maxDistance,
+        rawQuery: query,
+        activeCategory,
+      };
+
+      console.log("[search] start request", requestParams);
+
+      try {
+        setLoading(true);
+        setError(null);
+        const payload = await searchFixers({
+          service,
+          rating: filters.minRating > 0 ? filters.minRating : undefined,
+          availability,
+          lat: userCoords.lat,
+          lng: userCoords.lng,
+          radius: filters.maxDistance,
+        });
+
+        console.log("[search] endpoint response", payload);
+
+        const mapped = (payload?.fixers ?? []).map(mapFixerResult);
+        const filteredList = mapped.filter((item) => item.distance <= filters.maxDistance && item.rating >= filters.minRating);
+        filteredList.sort((a, b) => {
+          switch (filters.sortBy) {
+            case "distance":
+              return a.distance - b.distance;
+            default:
+              return b.rating - a.rating;
+          }
+        });
+
+        console.log("[search] mapped results", filteredList);
+
+        if (active) setResults(filteredList);
+      } catch (err: any) {
+        console.error("[search] request failed", {
+          request: requestParams,
+          error: err?.message || err,
+          stack: err?.stack,
+        });
+        console.warn("[search] fixer search failed", err);
+        if (active) {
+          setResults([]);
+          setError(err?.message || "Could not load fixers right now.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadFixers();
+    return () => {
+      active = false;
+    };
+  }, [query, activeCategory, filters.maxDistance, filters.minRating, filters.availability, filters.sortBy, userCoords.lat, userCoords.lng]);
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.maxDistance !== DEFAULT_FILTERS.maxDistance) count++;
     if (filters.minRating !== DEFAULT_FILTERS.minRating) count++;
-    if (filters.minReviews !== DEFAULT_FILTERS.minReviews) count++;
-    if (filters.maxPrice !== DEFAULT_FILTERS.maxPrice) count++;
+    if (filters.availability !== DEFAULT_FILTERS.availability) count++;
     if (filters.sortBy !== DEFAULT_FILTERS.sortBy) count++;
     return count;
   }, [filters]);
-
-  // Filter + search logic
-  const results = useMemo(() => {
-    let list = [...ALL_FIXERS];
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(
-        (f) =>
-          f.name.toLowerCase().includes(q) ||
-          f.trade.toLowerCase().includes(q) ||
-          f.category.toLowerCase().includes(q)
-      );
-    }
-    if (activeCategory !== "all") {
-      list = list.filter((f) => f.category === activeCategory);
-    }
-    list = list.filter((f) => f.distance <= filters.maxDistance);
-    list = list.filter((f) => f.rating >= filters.minRating);
-    list = list.filter((f) => f.reviews >= filters.minReviews);
-    list = list.filter((f) => f.price <= filters.maxPrice);
-    list.sort((a, b) => {
-      switch (filters.sortBy) {
-        case "distance": return a.distance - b.distance;
-        case "price": return a.price - b.price;
-        case "reviews": return b.reviews - a.reviews;
-        default: return b.rating - a.rating;
-      }
-    });
-    return list;
-  }, [query, activeCategory, filters]);
 
   return (
     <SafeAreaView
@@ -595,10 +646,8 @@ export default function SearchScreen() {
 
       {/* Top navigation bar */}
       <TopBar
-        location="Lagos, NG"
-        notificationCount={3}
-        initials="JD"
         onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onSettingsPress={() => router.push("/(tabs)/settings")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
@@ -670,6 +719,8 @@ export default function SearchScreen() {
         </Pressable>
       </View>
 
+      {/* Location permission is handled via a small modal instead of a visible status banner. */}
+
       {/* ── Category chips ─────────────────────────────────────────── */}
       <ScrollView
         horizontal
@@ -720,7 +771,7 @@ export default function SearchScreen() {
       {/* ── Results count ──────────────────────────────────────────── */}
       <View style={styles.resultsHeader}>
         <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-          {results.length} fixer{results.length !== 1 ? "s" : ""} found
+          {loading ? "Searching..." : `${results.length} fixer${results.length !== 1 ? "s" : ""} found`}
         </Text>
         {activeFilterCount > 0 && (
           <Pressable onPress={() => setFilters(DEFAULT_FILTERS)}>
@@ -732,7 +783,21 @@ export default function SearchScreen() {
       </View>
 
       {/* ── Fixer list ─────────────────────────────────────────────── */}
-      {results.length === 0 ? (
+      {loading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Finding fixers...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="alert-circle-outline" size={52} color={colors.border} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Couldn’t load fixers</Text>
+          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>{error}</Text>
+          <Pressable style={[styles.emptyBtn, { backgroundColor: colors.accent }]} onPress={() => { setError(null); setQuery(query); }}>
+            <Text style={[styles.emptyBtnText, { color: colors.card }]}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : results.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="search-outline" size={52} color={colors.border} />
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
@@ -779,6 +844,47 @@ export default function SearchScreen() {
         onClose={() => setShowFilters(false)}
       />
 
+      <Modal
+        transparent
+        visible={locationModalVisible}
+        animationType="fade"
+        onRequestClose={() => setLocationModalVisible(false)}
+      >
+        <Pressable style={styles.locationModalBackdrop} onPress={() => setLocationModalVisible(false)} />
+        <View style={[styles.locationModal, { backgroundColor: colors.panel, borderColor: colors.border }]}>
+          <View style={[styles.locationModalIconWrap, { backgroundColor: colors.accent + "22" }]}>
+            <Ionicons name="location-outline" size={22} color={colors.accent} />
+          </View>
+          <Text style={[styles.locationModalTitle, { color: colors.textPrimary }]}>Need your real location</Text>
+          <Text style={[styles.locationModalText, { color: colors.textSecondary }]}>
+            We use your live latitude and longitude to find fixers closest to you. Without it, we can only fall back to a general Lagos estimate.
+          </Text>
+
+          <View style={styles.locationModalActions}>
+            <Pressable
+              style={[styles.locationModalSecondary, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => {
+                setLocationModalVisible(false);
+                setLocationStatus("fallback");
+                setUserCoords(DEFAULT_COORDS);
+                logLocationState("fallback", DEFAULT_COORDS);
+              }}
+            >
+              <Text style={[styles.locationModalSecondaryText, { color: colors.textPrimary }]}>Use Lagos</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.locationModalPrimary, { backgroundColor: colors.accent }]}
+              onPress={async () => {
+                await resolveLocation(true);
+              }}
+            >
+              <Text style={[styles.locationModalPrimaryText, { color: colors.card }]}>Allow access</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       <Navbar />
     </SafeAreaView>
   );
@@ -787,6 +893,22 @@ export default function SearchScreen() {
 // ─── Styles (layout/spacing only — colours applied inline) ───────────────────
 const styles = StyleSheet.create({
   root: { flex: 1 },
+
+  helperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  helperText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "600",
+  },
 
   // ── Search row ──
   searchRow: {

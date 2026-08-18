@@ -1,7 +1,7 @@
 // app/(tabs)/bookings.tsx
 // FixGlobal — Bookings Screen
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ScrollView,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +18,12 @@ import { useRouter } from "expo-router";
 import TopBar from "../../src/components/layout/TopBar";
 import Navbar from "../../src/components/layout/Navbar";
 import useTheme from "../../src/context/ThemeContext";
+import {
+  cancelBooking,
+  getBookings,
+  rescheduleBooking,
+  type BookingRecord,
+} from "../../src/features/booking/api";
 
 // ─── Static Tokens ────────────────────────────────────────────────────────────
 const BLUE = "#1A3C6E";
@@ -51,133 +58,90 @@ const STATUS = {
 
 type BookingStatus = keyof typeof STATUS;
 
-// ─── Mock bookings ────────────────────────────────────────────────────────────
-const ALL_BOOKINGS = [
-  {
-    id: "1",
-    service: "Plumbing Service",
-    desc: "Fix leaking kitchen sink pipes",
-    pro: "Chukwudi Adeyemi",
-    proInitials: "CA",
-    proBg: BLUE,
-    date: "2025-06-15",
-    dateLabel: "Jun 15, 2025",
-    time: "2:00 PM",
-    price: "₦3,500",
-    status: "active" as BookingStatus,
-    icon: "water-outline" as const,
-    iconColor: "#3B82F6",
-    iconBg: "#EFF6FF",
-    month: "June 2025",
-  },
-  {
-    id: "2",
-    service: "Electrical Repair",
-    desc: "Install new ceiling fan + wiring check",
-    pro: "Amara Okonkwo",
-    proInitials: "AO",
-    proBg: "#8B5CF6",
-    date: "2025-06-10",
-    dateLabel: "Jun 10, 2025",
-    time: "10:00 AM",
-    price: "₦4,000",
-    status: "completed" as BookingStatus,
-    icon: "flash-outline" as const,
-    iconColor: "#F59E0B",
-    iconBg: "#FFFBEB",
-    month: "June 2025",
-  },
-  {
-    id: "3",
-    service: "Deep Cleaning",
-    desc: "Full apartment deep clean — 3 rooms",
-    pro: "Fatima Kabir",
-    proInitials: "FK",
-    proBg: "#10B981",
-    date: "2025-06-05",
-    dateLabel: "Jun 5, 2025",
-    time: "9:00 AM",
-    price: "₦5,500",
-    status: "completed" as BookingStatus,
-    icon: "sparkles-outline" as const,
-    iconColor: "#10B981",
-    iconBg: "#ECFDF5",
-    month: "June 2025",
-  },
-  {
-    id: "4",
-    service: "Painting & Decoration",
-    desc: "Paint living room + bedroom walls",
-    pro: "Emeka Tunde",
-    proInitials: "ET",
-    proBg: "#EF4444",
-    date: "2025-05-28",
-    dateLabel: "May 28, 2025",
-    time: "8:00 AM",
-    price: "₦2,800",
-    status: "cancelled" as BookingStatus,
-    icon: "color-palette-outline" as const,
-    iconColor: "#8B5CF6",
-    iconBg: "#F5F3FF",
-    month: "May 2025",
-  },
-  {
-    id: "5",
-    service: "AC Repair",
-    desc: "Service + gas refill for 2 AC units",
-    pro: "Biodun Salami",
-    proInitials: "BS",
-    proBg: "#06B6D4",
-    date: "2025-05-20",
-    dateLabel: "May 20, 2025",
-    time: "11:00 AM",
-    price: "₦6,000",
-    status: "completed" as BookingStatus,
-    icon: "snow-outline" as const,
-    iconColor: "#06B6D4",
-    iconBg: "#ECFEFF",
-    month: "May 2025",
-  },
-  {
-    id: "6",
-    service: "Carpentry",
-    desc: "Fix broken wardrobe door + shelf",
-    pro: "Tunde Bakare",
-    proInitials: "TB",
-    proBg: "#F59E0B",
-    date: "2025-05-10",
-    dateLabel: "May 10, 2025",
-    time: "3:00 PM",
-    price: "₦2,200",
-    status: "completed" as BookingStatus,
-    icon: "hammer-outline" as const,
-    iconColor: "#EF4444",
-    iconBg: "#FEF2F2",
-    month: "May 2025",
-  },
-  {
-    id: "7",
-    service: "Security Installation",
-    desc: "Install 2 CCTV cameras at gate + door",
-    pro: "Kemi Adeleye",
-    proInitials: "KA",
-    proBg: BLUE,
-    date: "2025-07-02",
-    dateLabel: "Jul 2, 2025",
-    time: "1:00 PM",
-    price: "₦8,500",
-    status: "pending" as BookingStatus,
-    icon: "shield-outline" as const,
-    iconColor: BLUE,
-    iconBg: "#EEF4FD",
-    month: "July 2025",
-  },
-];
+type BookingListItem = {
+  id: string;
+  service: string;
+  desc: string;
+  pro: string;
+  proInitials: string;
+  proBg: string;
+  date: string;
+  dateLabel: string;
+  time: string;
+  price: string;
+  status: BookingStatus;
+  icon: "water-outline" | "flash-outline" | "sparkles-outline" | "color-palette-outline" | "snow-outline" | "hammer-outline" | "shield-outline" | "calendar-outline";
+  iconColor: string;
+  iconBg: string;
+  month: string;
+};
 
-const MONTHS = [
-  "All Months",
-  ...Array.from(new Set(ALL_BOOKINGS.map((b) => b.month))),
-];
+function mapBookingRecordToListItem(item: BookingRecord): BookingListItem {
+  const date = item.scheduledFor ? new Date(item.scheduledFor) : new Date();
+  const statusKey = (item.status || "pending").toLowerCase();
+  const normalizedStatus: BookingStatus =
+    statusKey.includes("active") || statusKey === "in_progress" || statusKey === "accepted" || statusKey === "on_the_way" || statusKey === "arrived"
+      ? "active"
+      : statusKey.includes("cancel") || statusKey.includes("rejected")
+        ? "cancelled"
+        : statusKey.includes("complete") || statusKey === "closed"
+          ? "completed"
+          : statusKey.includes("pending")
+            ? "pending"
+            : "active";
+
+  const pro = item.fixer ? `${item.fixer.firstName || ""} ${item.fixer.lastName || ""}`.trim() || "Fixer" : "Assigned fixer";
+  const initials = pro
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "FX";
+
+  const service = item.serviceName || "Service Booking";
+  const dateLabel = date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const month = date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  return {
+    id: item.id || item.bookingId || Math.random().toString(36).slice(2),
+    service,
+    desc: item.notes || item.address || "Booking scheduled successfully.",
+    pro,
+    proInitials: initials,
+    proBg: BLUE,
+    date: date.toISOString(),
+    dateLabel,
+    time,
+    price: item.priceEstimate ? `₦${Number(item.priceEstimate).toLocaleString()}` : item.price ? `₦${Number(item.price).toLocaleString()}` : "—",
+    status: normalizedStatus,
+    icon:
+      normalizedStatus === "completed"
+        ? "sparkles-outline"
+        : normalizedStatus === "cancelled"
+          ? ("close-circle" as any)
+          : normalizedStatus === "pending"
+            ? "shield-outline"
+            : "calendar-outline",
+    iconColor:
+      normalizedStatus === "completed"
+        ? "#10B981"
+        : normalizedStatus === "cancelled"
+          ? "#EF4444"
+          : normalizedStatus === "pending"
+            ? BLUE
+            : "#3B82F6",
+    iconBg:
+      normalizedStatus === "completed"
+        ? "#ECFDF5"
+        : normalizedStatus === "cancelled"
+          ? "#FEF2F2"
+          : normalizedStatus === "pending"
+            ? "#EEF4FD"
+            : "#EFF6FF",
+    month,
+  };
+}
 
 const TABS = [
   { key: "all", label: "All" },
@@ -188,12 +152,13 @@ const TABS = [
 ];
 
 // ─── Summary strip ────────────────────────────────────────────────────────────
-function SummaryStrip({ colors }: { colors: any }) {
+function SummaryStrip(props: { colors: any; bookings: BookingListItem[] }) {
+  const { colors, bookings } = props;
   const counts = {
-    total: ALL_BOOKINGS.length,
-    active: ALL_BOOKINGS.filter((b) => b.status === "active").length,
-    completed: ALL_BOOKINGS.filter((b) => b.status === "completed").length,
-    cancelled: ALL_BOOKINGS.filter((b) => b.status === "cancelled").length,
+    total: bookings.length,
+    active: bookings.filter((b: BookingListItem) => b.status === "active").length,
+    completed: bookings.filter((b: BookingListItem) => b.status === "completed").length,
+    cancelled: bookings.filter((b: BookingListItem) => b.status === "cancelled").length,
   };
 
   const items = [
@@ -229,7 +194,7 @@ function BookingCard({
   colors,
   isDarkMode,
 }: {
-  booking: (typeof ALL_BOOKINGS)[0];
+  booking: BookingListItem;
   onViewDetails: () => void;
   onRebook: () => void;
   onCancel: () => void;
@@ -240,7 +205,6 @@ function BookingCard({
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      {/* Header */}
       <View style={styles.cardHeader}>
         <View style={[styles.cardIconBox, { backgroundColor: booking.iconBg }]}>
           <Ionicons name={booking.icon} size={22} color={booking.iconColor} />
@@ -259,7 +223,6 @@ function BookingCard({
 
       <View style={[styles.cardDivider, { backgroundColor: colors.border }]} />
 
-      {/* Pro + date */}
       <View style={styles.cardMeta}>
         <View style={styles.metaItem}>
           <View style={[styles.proAvatar, { backgroundColor: booking.proBg }]}>
@@ -282,7 +245,6 @@ function BookingCard({
         </View>
       </View>
 
-      {/* Footer */}
       <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
@@ -315,19 +277,16 @@ function BookingCard({
 }
 
 // ─── Month picker ─────────────────────────────────────────────────────────────
-function MonthPicker({
-  visible,
-  selected,
-  onSelect,
-  onClose,
-  colors,
-}: {
+function MonthPicker(props: {
   visible: boolean;
   selected: string;
   onSelect: (m: string) => void;
   onClose: () => void;
   colors: any;
+  months: string[];
 }) {
+  const { visible, selected, onSelect, onClose, colors, months } = props;
+
   return (
     <Modal
       transparent
@@ -339,7 +298,7 @@ function MonthPicker({
       <View style={[styles.pickerSheet, { backgroundColor: colors.card }]}>
         <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
         <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>Filter by Month</Text>
-        {MONTHS.map((m) => (
+        {months.map((m) => (
           <Pressable
             key={m}
             style={[
@@ -380,26 +339,82 @@ export default function BookingsScreen() {
   const [activeTab, setActiveTab] = useState("all");
   const [activeMonth, setActiveMonth] = useState("All Months");
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [bookings, setBookings] = useState<BookingListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadBookings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await getBookings({ page: 1, limit: 50 });
+        const items = (res?.bookings ?? []).map(mapBookingRecordToListItem);
+        if (active) setBookings(items);
+      } catch (err: any) {
+        console.warn("[bookings] failed to load", err);
+        if (active) {
+          setBookings([]);
+          setError(err?.message || "Could not load bookings right now.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadBookings();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const months = useMemo(
+    () => ["All Months", ...Array.from(new Set(bookings.map((b) => b.month)))],
+    [bookings],
+  );
 
   const filtered = useMemo(() => {
-    let list = [...ALL_BOOKINGS];
+    let list = [...bookings];
     if (activeTab !== "all") list = list.filter((b) => b.status === activeTab);
     if (activeMonth !== "All Months")
       list = list.filter((b) => b.month === activeMonth);
     return list.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [activeTab, activeMonth]);
+  }, [activeTab, activeMonth, bookings]);
+
+  const handleCancelBooking = async (id: string) => {
+    try {
+      await cancelBooking(id, { reason: "Cancelled by customer from app." });
+      setBookings((prev) => prev.map((item) => item.id === id ? { ...item, status: "cancelled" } : item));
+    } catch (err) {
+      console.warn("[bookings] cancel failed", err);
+    }
+  };
+
+  const handleRescheduleBooking = async (id: string) => {
+    try {
+      const nextDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString();
+      await rescheduleBooking(id, { scheduledFor: nextDate, reason: "Rescheduled from app." });
+      setBookings((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, date: nextDate, dateLabel: new Date(nextDate).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }), time: new Date(nextDate).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) } : item,
+        ),
+      );
+    } catch (err) {
+      console.warn("[bookings] reschedule failed", err);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
 
       {/* Top navigation bar */}
       <TopBar
-        location="Lagos, NG"
-        notificationCount={3}
-        initials="JD"
         onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onSettingsPress={() => router.push("/(tabs)/settings")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
@@ -423,7 +438,7 @@ export default function BookingsScreen() {
       </View>
 
       {/* Summary strip */}
-      <SummaryStrip colors={colors} />
+      <SummaryStrip colors={colors} bookings={bookings} />
 
       {/* Status tabs */}
       <ScrollView
@@ -456,7 +471,21 @@ export default function BookingsScreen() {
       </ScrollView>
 
       {/* List or empty */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Loading bookings...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="alert-circle-outline" size={52} color={colors.border} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Unable to load bookings</Text>
+          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>{error}</Text>
+          <Pressable style={[styles.emptyBtn, { backgroundColor: colors.accent }]} onPress={() => { setError(null); setBookings([]); }}>
+            <Text style={[styles.emptyBtnText, { color: colors.card }]}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : filtered.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="calendar-outline" size={52} color={colors.border} />
           <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No bookings found</Text>
@@ -485,8 +514,8 @@ export default function BookingsScreen() {
                 colors={colors}
                 isDarkMode={isDarkMode}
                 onViewDetails={() => router.push("/(modals)/booking")}
-                onRebook={() => router.push("/(tabs)/search")}
-                onCancel={() => console.log("Cancel", item.id)}
+                onRebook={() => handleRescheduleBooking(item.id)}
+                onCancel={() => handleCancelBooking(item.id)}
               />
             )}
           />
@@ -499,6 +528,7 @@ export default function BookingsScreen() {
         onSelect={setActiveMonth}
         onClose={() => setShowMonthPicker(false)}
         colors={colors}
+        months={months}
       />
 
       <Navbar />

@@ -16,10 +16,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Navbar from "@/src/components/layout/Navbar";
 import TopBar from "../../src/components/layout/TopBar";
 import useTheme from "../../src/context/ThemeContext";
+import { useAuth } from "../../src/hooks/useAuth";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { logout } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = () => {
@@ -42,10 +44,8 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={["top"]}>
       {/* Top navigation bar */}
       <TopBar
-        location="Lagos, NG"
-        notificationCount={3}
-        initials="JD"
         onNotificationPress={() => router.push("/(tabs)/notifications")}
+        onSettingsPress={() => router.push("/(tabs)/settings")}
         onLocationPress={() => router.push("/(tabs)/settings")}
         onAvatarPress={() => router.push("/(tabs)/profile")}
       />
@@ -115,7 +115,15 @@ export default function ProfileScreen() {
 
         <Pressable
           style={[styles.logoutBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => router.replace("/(auth)/login")}
+          onPress={async () => {
+            try {
+              await logout();
+              router.replace("/(auth)/login");
+            } catch (error) {
+              console.error("[auth] logout failed from profile", error);
+              router.replace("/(auth)/login");
+            }
+          }}
         >
           <Ionicons name="log-out-outline" size={22} color="#EF4444" />
           <Text style={[styles.logoutText, { color: colors.textPrimary }]}>Log Out</Text>
